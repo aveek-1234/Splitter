@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { api } from "@/convex/_generated/api";
