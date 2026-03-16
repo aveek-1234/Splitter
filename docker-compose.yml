@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  splitter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: splitter-app
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Add your environment variables here:
+      # - CONVEX_DEPLOYMENT=
+      # - NEXT_PUBLIC_CONVEX_URL=
+      # - CLERK_SECRET_KEY=
+      # - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+      # - CLERK_SIGN_IN_URL=/sign-in
+      # - CLERK_SIGN_UP_URL=/sign-up
+      # - CLERK_AFTER_SIGN_IN_URL=/dashboard
+      # - CLERK_AFTER_SIGN_UP_URL=/dashboard
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - splitter-network
+
+  # Optional: Uncomment if you need a reverse proxy
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - splitter
+  #   networks:
+  #     - splitter-network
+
+networks:
+  splitter-network:
+    driver: bridge
