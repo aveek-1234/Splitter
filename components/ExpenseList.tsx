@@ -32,6 +32,9 @@ function ExpenseList(
    const { data: currentUser }: { data?: User } = useFetchQuery(api.users.getCurrentUser);
    const deleteExpense = useMutateQuery(api.individualExpenses.deleteExpense);
 
+   console.log(expenses);
+   
+
   if (!expenses || expenses.length === 0) {
     return (
       <div className="flex justify-center items-center py-8">

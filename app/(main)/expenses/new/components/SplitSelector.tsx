@@ -25,7 +25,7 @@ export function SplitSelector({
 }: SplitSelectorProps) {
   const [localSplits, setLocalSplits] = useState<Split[]>([])
   const [percentSplits, setPercentSplits] = useState<{ userId: string; percentage: number }[]>(
-    participants.map((p) => ({ userId: p._id, percentage: 0 }))
+    participants.map((p) => ({ userId: p?._id, percentage: 0 }))
   )
 
   // whenever relevant inputs change, compute a baseline set of splits and
@@ -33,23 +33,23 @@ export function SplitSelector({
   useEffect(() => {
     const total = parseFloat(amount) || 0
     let computed: Split[] = participants.map((p) => ({
-      userId: p._id,
+      userId: p?._id,
       amount: 0,
-      paid: p._id === paidByUserId,
+      paid: p?._id === paidByUserId,
     }))
 
     if (type === "equal" && participants.length > 0) {
       const per = total / participants.length
       computed = participants.map((p) => ({
-        userId: p._id,
+        userId: p?._id,
         amount: per,
-        paid: p._id === paidByUserId,
+        paid: p?._id === paidByUserId,
       }))
     }
 
     setLocalSplits(computed)
     onSplitsChange(computed)
-  }, [type, amount, participants, paidByUserId, onSplitsChange])
+  }, [type, amount, participants, paidByUserId])
 
   const updateSplit = (userId: string, value: number) => {
     let calculated = value
@@ -76,17 +76,19 @@ export function SplitSelector({
         </p>
       ) : (
         <div className="space-y-1">
-          {localSplits.map((split) => {
+          {localSplits?.map((split) => {
+            debugger
             const participant = participants.find(
-              (p) => p._id === split.userId
+              (p) => p?._id === split.userId
             )!
+            if(!participant || !participant._id || !participant.name || !split.userId) return null;
             return (
               <div
                 key={split.userId}
                 className="flex items-center gap-2"
               >
                 <span className="flex-1 truncate">
-                  {participant._id === currentUserId ? "You" : participant.name}
+                  {participant?._id === currentUserId ? "You" : participant?.name}
                 </span>
                 {type === "equal" ? (
                   <span className="w-24 text-right">
@@ -105,8 +107,9 @@ export function SplitSelector({
                           setPercentSplits((prev) => {
                             const next = prev.map((s) =>
                             {
+                            debugger;
                             console.log(s.userId, split.userId, percentage) 
-                            s.userId === split.userId ? { ...s, percentage } : s
+                            s=s.userId === split.userId ? { ...s, percentage } : s
                             console.log(s);
                             return s
                           }

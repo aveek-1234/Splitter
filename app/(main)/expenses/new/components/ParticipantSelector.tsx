@@ -34,11 +34,14 @@ export function ParticipantSelector({
       searchQuery.trim() } : "skip"
   )
 
+  console.log(selectedParticipants);
+  
+
   const handleParticipantToggle = (participant: User, isChecked: boolean) => {
     if (isChecked) {
       // Add participant if not already selected
       if (!selectedParticipants.find((p) => p._id === participant._id)) {
-        onChange([...selectedParticipants, participant])
+        onChange([participant])
         setSearchQuery("")
       }
     } else {
@@ -67,10 +70,10 @@ export function ParticipantSelector({
           disabled && "opacity-50 cursor-not-allowed"
         )}
       >
-        {selectedParticipants.length === 0 ? (
+        {selectedParticipants?.length === 0 ? (
           <span className="text-sm text-muted-foreground">Select participants...</span>
         ) : (
-          selectedParticipants.map((participant) => (
+          selectedParticipants?.filter((participant)=>participant && participant._id && participant.name).map((participant) => (
             <Badge key={participant._id} variant="secondary" className="pr-1">
               <span className="truncate max-w-xs">{participant.name}</span>
               <button
@@ -145,7 +148,7 @@ export function ParticipantSelector({
                         onClick={() => handleParticipantToggle(participant, !isSelected)}
                       >
                         <input
-                          type="checkbox"
+                          type="button"
                           checked={isSelected}
                           onChange={(e) =>
                             handleParticipantToggle(participant, e.target.checked)
