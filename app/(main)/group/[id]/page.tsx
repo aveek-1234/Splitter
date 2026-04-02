@@ -72,7 +72,7 @@ function page() {
         <Button
           type="button"
           className="inline-flex items-center px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-medium transition focus:outline-none"
-          onClick={() => router.push("/expenses/new")}
+          onClick={() => router.push(`/expenses/new?id=${params.id}&type=group`)}
         >
           <span className="mr-2">
             <Plus className="w-5 h-5" />
@@ -117,13 +117,13 @@ function page() {
             value="expenses"
             className="py-2 px-4 text-gray-700 font-medium border-b-2 transition-all"
           >
-            Expenses({expenses.length})
+            Expenses({expenses?.length})
           </TabsTrigger>
           <TabsTrigger
             value="settlements"
             className="py-2 px-4 text-gray-700 font-medium border-b-2 transition-all"
           >
-            Settlements({settlements.length})
+            Settlements({settlements?.length})
           </TabsTrigger>
         </TabsList>
         <TabsContent value="expenses" className="py-4">

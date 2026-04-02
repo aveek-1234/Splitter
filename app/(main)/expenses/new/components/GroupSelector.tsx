@@ -22,6 +22,7 @@ export type GroupWithMembers = {
 
 type GroupSelectorProps = {
   value: string
+  id?:string
   onChange: (groupId: string) => void
   error?: { message?: string }
   disabled?: boolean
@@ -29,6 +30,7 @@ type GroupSelectorProps = {
 
 export function GroupSelector({
   value,
+  id,
   onChange,
   error,
   disabled,
@@ -39,6 +41,9 @@ export function GroupSelector({
   )
 
   const selected = groups.find((g) => g.id === value)
+
+  const preSelectedGroup = groups.find((group) => group.id === id)
+
   const displayValue = selected?.name ?? "Select group..."
 
   if (loading) {
@@ -86,7 +91,7 @@ export function GroupSelector({
         </SelectValue>
       </SelectTrigger>
       <SelectContent>
-        {groups.map((group) => (
+        {!id ?groups.map((group) => (
           <SelectItem key={group.id} value={group.id}>
             <span className="truncate">
               {group.name}
@@ -95,7 +100,16 @@ export function GroupSelector({
               </span>
             </span>
           </SelectItem>
-        ))}
+        )):
+          <SelectItem key={preSelectedGroup?.id} value={preSelectedGroup?.id || ""}>
+            <span className="truncate">
+              {preSelectedGroup?.name}
+              <span className="ml-1.5 text-muted-foreground">
+                ({preSelectedGroup?.members.length} member{preSelectedGroup?.members.length !== 1 ? "s" : ""})
+              </span>
+            </span>
+          </SelectItem>
+         }
       </SelectContent>
     </Select>
   )

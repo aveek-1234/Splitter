@@ -12,6 +12,7 @@ import { useFetchQuery } from "@/hooks/useFetchQuery"
 
 type ParticipantSelectorProps = {
   selectedParticipants: User[]
+  id?: string
   onChange: (selected: User[]) => void
   error?: { message?: string }
   disabled?: boolean
@@ -19,6 +20,7 @@ type ParticipantSelectorProps = {
 
 export function ParticipantSelector({
   selectedParticipants,
+  id,
   onChange,
   error,
   disabled = false,
@@ -26,22 +28,27 @@ export function ParticipantSelector({
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
-  // Use useFetchQuery with search query - only fetch when there's a non-empty search
   const shouldSearch = searchQuery.trim().length > 0
-  const { data: searchResults = [], loading: isSearching } = useFetchQuery<User[]>(
-    api.users.searchUsers,
-    shouldSearch ? { query:                                                                                                                                                                                                                                                                                                                                                                            
-      searchQuery.trim() } : "skip"
+
+  const { data: searchedUser, loading: isLoadingUser } = useFetchQuery<User>(
+    api.users.getUserById,
+    id ? { id } : "skip"
   )
 
-  console.log(selectedParticipants);
-  
+  const { data: searchResults = [], loading: isSearching } = useFetchQuery<User[]>(
+    api.users.searchUsers,
+    !id && shouldSearch ? { query: searchQuery.trim() } : "skip"
+  )
+
+  const isSearchingResults = id ? isLoadingUser : isSearching
+  const resultsToShow = id ? (searchedUser ? [searchedUser] : []) : searchResults
+  const shouldShowResults = id || shouldSearch
 
   const handleParticipantToggle = (participant: User, isChecked: boolean) => {
     if (isChecked) {
       // Add participant if not already selected
       if (!selectedParticipants.find((p) => p._id === participant._id)) {
-        onChange([participant])
+        onChange([...selectedParticipants, participant])
         setSearchQuery("")
       }
     } else {
@@ -107,39 +114,40 @@ export function ParticipantSelector({
       {/* Dropdown Content */}
       {isOpen && (
         <div className="relative z-50 w-full bg-white border border-input rounded-md shadow-md p-3 mt-1">
-          {/* Search Input */}
-          <div className="mb-3 relative">
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search participants by name or email..."
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                disabled={disabled}
-                className="pl-8"
-                autoFocus
-              />
-              {isSearching && (
-                <Loader2 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-              )}
+          {!id && (
+            <div className="mb-3 relative">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search participants by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  disabled={disabled}
+                  className="pl-8"
+                  autoFocus
+                />
+                {isSearchingResults && (
+                  <Loader2 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Search Results */}
-          {searchQuery.trim().length > 0 ? (
+          {shouldShowResults ? (
             <div>
-              {isSearching ? (
+              {isSearchingResults ? (
                 <div className="text-center py-4 text-sm text-muted-foreground flex items-center justify-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Searching...
+                  {id ? "Loading participant..." : "Searching..."}
                 </div>
-              ) : searchResults.length === 0 ? (
+              ) : resultsToShow.length === 0 ? (
                 <div className="text-center py-4 text-sm text-muted-foreground">
                   No participants found
                 </div>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {searchResults.map((participant) => {
+                  {resultsToShow.map((participant) => {
                     const isSelected = selectedParticipants.some((p) => p._id === participant._id)
                     return (
                       <div

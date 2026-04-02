@@ -21,6 +21,7 @@ import { ParticipantSelector } from "./ParticipantSelector"
 
 type ExpenseFormProps = {
   type: "individual" | "group"
+  id?: string
   onSuccess: (id: string) => void
 }
 
@@ -36,7 +37,7 @@ const expenseSchema= z.object({
   groupId: z.string().optional()
 })
 
-function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
+function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
   // const [participants, setParticipants] = useState<User[]>([]);
   const [selectedParticipants, setSelectedParticipants] = useState<User[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupWithMembers | null>(null);
@@ -222,6 +223,7 @@ function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
           control={control}
           render={({ field }) => (
             <GroupSelector
+              id={id}
               value={field.value ?? ""}
               onChange={(id) => {
                 field.onChange(id);
@@ -241,6 +243,7 @@ function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
         // from the chosen group and the user should not be able to modify it.
         type === "individual" && (
           <ParticipantSelector
+            id={id}
             selectedParticipants={participants}
             onChange={(selected) => {
               setSelectedParticipants(selected);

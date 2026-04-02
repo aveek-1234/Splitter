@@ -24,9 +24,13 @@ export const getGroupExpenses = query({
       throw new Error("Group not found");
     }
 
+    if(!group.members || !Array.isArray(group.members)){
+      throw new Error("Invalid group members data");
+    }
+
     // Check if currentUser is a member of this group
-    if (!group.members || !Array.isArray(group.members) || !group.members.some((memberId: any) => memberId.toString() === currentUser._id.toString())) {
-      throw new Error("You are not a member of this group.");
+    if (!group.members.some((member: any) => member.userId.toString() === currentUser._id.toString())) {
+      throw new Error("You are not a member of this group from getGroupExpenses.");
     }
 
     // All expenses that belong to this group

@@ -90,7 +90,7 @@ const Userpage = () => {
         <Button
           type="button"
           className="inline-flex items-center px-4 py-2 rounded bg-blue-500 hover:bg-blue-600 text-white font-medium transition focus:outline-none"
-          onClick={() => router.push("/expenses/new")}
+          onClick={() => router.push(`/expenses/new?id=${params.id}&type=individual`) }
         >
           <span className="mr-2">
             <Plus className="w-5 h-5" />

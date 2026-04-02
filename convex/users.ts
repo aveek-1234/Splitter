@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query} from "./_generated/server"
 import { internal } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
 
 export const store = mutation({
     args:{},
@@ -49,6 +50,18 @@ export const getCurrentUser = query({
         return user;
     },
 });
+
+export const getUserById = query({
+    args:{id: v.string()},
+    handler: async(ctx, args)=>{
+        const user = await ctx.db.get(args.id as Id<"users"> );
+        if(!user){
+            throw new Error("User not found");
+        }
+        return user;
+    }
+});
+
 
 export const searchUsers = query({
     args:{query: v.string()},
