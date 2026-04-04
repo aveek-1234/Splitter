@@ -28,12 +28,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
        <ClerkProvider>
           <ConvexClientProvider>
             <Header />
-            <main className="min-h-screen">
+            <main className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 md:px-4">
               {children}
             </main>
           </ConvexClientProvider>

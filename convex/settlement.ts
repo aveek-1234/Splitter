@@ -34,7 +34,7 @@ export const createSettlement: ReturnType<typeof mutation> = mutation({
         (m: any) => m.userId === user._id
       );
       if (!isMember) {
-        throw new Error("You are not a member of this group");
+        throw new Error("You are not a member of this group from createSettlement.");
       }
 
       // also make sure both parties belong to the group
@@ -191,7 +191,7 @@ export const getSettlements = query({
       }
       const isCurrentUserMember = group.members.some((m: any) => m.userId === currentUser._id);
       if(!isCurrentUserMember){
-        throw new Error("You are not a member of this group");
+        throw new Error("You are not a member of this group from getSettlements.");
       }
 
       const expenses = await ctx.db.query("expenses").withIndex("by_group", q => q.eq("groupId", groupId)).collect();

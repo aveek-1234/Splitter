@@ -57,22 +57,32 @@ export const getIndividualExpenses = query({
     }
 
     // Fetch all non-group expenses paid by me
-    const iPaid: Expense[] = await ctx.db
-      .query("expenses")
-      .filter((q) =>
-        q.eq(q.field("paidByUserId"), me._id) &&
-        (q.eq(q.field("groupId"), undefined) || q.eq(q.field("groupId"), null))
+  const iPaid: Expense[] = await ctx.db
+  .query("expenses")
+  .filter((q) =>
+    q.and(
+      q.eq(q.field("paidByUserId"), me._id),
+      q.or(
+        q.eq(q.field("groupId"), undefined),
+        q.eq(q.field("groupId"), null)
       )
-      .collect();
+    )
+  )
+  .collect();
 
     // Fetch all non-group expenses paid by other user
-    const userPaid: Expense[] = await ctx.db
-      .query("expenses")
-      .filter((q) =>
-        q.eq(q.field("paidByUserId"), userId) &&
-        (q.eq(q.field("groupId"), undefined) || q.eq(q.field("groupId"), null))
+  const userPaid: Expense[] = await ctx.db
+  .query("expenses")
+  .filter((q) =>
+    q.and(
+      q.eq(q.field("paidByUserId"), userId),
+      q.or(
+        q.eq(q.field("groupId"), undefined),
+        q.eq(q.field("groupId"), null)
       )
-      .collect();
+    )
+  )
+  .collect();
 
     const totalExpenses: Expense[] = [...iPaid, ...userPaid];
 
@@ -150,6 +160,8 @@ export const getIndividualExpenses = query({
         balance -= settlement.amount;
       }
     }
+
+    
 
     const userDetails: User | null = await ctx.db.get(userId);
 

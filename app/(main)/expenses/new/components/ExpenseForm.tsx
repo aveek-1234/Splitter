@@ -13,7 +13,7 @@ import { expenseCategories } from "@/lib/expenseCategory"
 import { Group, Split, User } from "@/lib/models"
 import { SplitSelector, SplitType } from "./SplitSelector"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Controller, useForm } from "react-hook-form"
 import {z} from "zod"
 import { GroupSelector, type GroupWithMembers } from "./GroupSelector"
@@ -21,6 +21,7 @@ import { ParticipantSelector } from "./ParticipantSelector"
 
 type ExpenseFormProps = {
   type: "individual" | "group"
+  id?: string
   onSuccess: (id: string) => void
 }
 
@@ -36,8 +37,8 @@ const expenseSchema= z.object({
   groupId: z.string().optional()
 })
 
-function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
-  const [participants, setParticipants] = useState<User[]>([]);
+function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
+  // const [participants, setParticipants] = useState<User[]>([]);
   const [selectedParticipants, setSelectedParticipants] = useState<User[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupWithMembers | null>(null);
   const [splits, setSplits] = useState<Split[]>([]);
@@ -122,6 +123,19 @@ function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
     }
   }, [type, groupIdValue, userGroups,selectedGroup]);
 
+
+  const participants = useMemo(() => {
+    if (type !== "group" && currentUser) {
+      const currentUserSelected = selectedParticipants.some(
+        (participant) => participant._id === currentUser._id
+      )
+      return currentUserSelected
+        ? selectedParticipants
+        : [...selectedParticipants, currentUser]
+    }
+    return selectedParticipants
+  }, [type, currentUser, selectedParticipants])
+
   if(!currentUser) return null;
 
   const onSubmit = async (data: z.infer<typeof expenseSchema>) => {
@@ -144,7 +158,7 @@ function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
         splits,
         groupId: type === "group" ? data.groupId : undefined,
       });
-      onSuccess(expenseId as string);
+      onSuccess(type==="individual"? participants?.[0]?._id as string : selectedGroup?.id as string);
       reset();
     } catch (err) {
       console.error("failed to create expense", err);
@@ -215,6 +229,7 @@ function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
           control={control}
           render={({ field }) => (
             <GroupSelector
+              id={id}
               value={field.value ?? ""}
               onChange={(id) => {
                 field.onChange(id);
@@ -234,7 +249,8 @@ function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
         // from the chosen group and the user should not be able to modify it.
         type === "individual" && (
           <ParticipantSelector
-            selectedParticipants={selectedParticipants}
+            id={id}
+            selectedParticipants={participants}
             onChange={(selected) => {
               setSelectedParticipants(selected);
             }}
@@ -247,7 +263,7 @@ function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
         // expenses we expect selectedParticipants to already contain every member
         // of the group; for individual expenses we only show it once the user has
         // picked at least one participant.
-        (selectedParticipants.length > 0) && (
+        (participants.length > 0) && (
           <div className="space-y-2">
             <Label htmlFor="paidBy">Paid by</Label>
             <Controller
@@ -259,7 +275,7 @@ function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
                     <SelectValue placeholder="Select who paid" />
                   </SelectTrigger>
                   <SelectContent>
-                    {selectedParticipants.map((participant) => (
+                    {participants.filter((participant) => participant && participant._id && participant.name).map((participant) => (
                       <SelectItem key={participant._id} value={participant._id}>
                         {participant.name}
                       </SelectItem>
@@ -290,7 +306,7 @@ function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
                 <SplitSelector
                   type="equal"
                   amount={amount}
-                  participants={selectedParticipants}
+                  participants={participants}
                   paidByUserId={paidByUserId}
                   currentUserId={currentUser._id}
                   onSplitsChange={setSplits}
@@ -300,7 +316,7 @@ function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
                 <SplitSelector
                   type="percentage"
                   amount={amount}
-                  participants={selectedParticipants}
+                  participants={participants}
                   paidByUserId={paidByUserId}
                   currentUserId={currentUser._id}
                   onSplitsChange={setSplits}
@@ -310,7 +326,7 @@ function ExpenseForm({ type, onSuccess }: ExpenseFormProps) {
                 <SplitSelector
                   type="exact amount"
                   amount={amount}
-                  participants={selectedParticipants}
+                  participants={participants}
                   paidByUserId={paidByUserId}
                   currentUserId={currentUser._id}
                   onSplitsChange={setSplits}

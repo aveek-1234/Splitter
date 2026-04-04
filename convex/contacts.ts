@@ -3,6 +3,22 @@ import {api, internal} from './_generated/api.js'
 import { mutation, query } from "./_generated/server";
 import { v } from 'convex/values';
 
+export interface contactUserModel{
+    id: Id<"users">,
+    name: string,
+    email: string,
+    type: string,
+    image?: string,
+}
+
+export interface contactGroupModel{
+    id: Id<"groups">,
+    name: string,
+    description?: string,
+    type: string,
+    memberCount: number,
+}
+
 
 export const getAllContacts = query({
     handler: async (ctx) => {
@@ -25,20 +41,21 @@ export const getAllContacts = query({
                 }
             });
         })
-       const contactUsers = await Promise.all(
-            [...contIds].map(async (id) => {
+        const results = await Promise.all(
+            [...contIds].flatMap(async (id) => {
             const user = await ctx.db.get(id as Id<"users">);
              return user
-            ? {
+            ? [{
                 id: user._id,
                 name: user.name,
                 email: user.email,
                 image: user.imageUrl,
                 type: "user",
-            }
-        : null;
+            }]
+        : [];
         }));
-        const userGroups =(await ctx.db.query("groups").collect()).filter((group)=>
+        const contactUsers: contactUserModel[] = results.flat();
+        const userGroups:contactGroupModel[] =(await ctx.db.query("groups").collect()).filter((group)=>
             group.members.some((member) => member.userId === currentUser._id)
         ).map((group)=>({
             id:group._id,
@@ -47,6 +64,9 @@ export const getAllContacts = query({
             memberCount: group.members.length,
             type:"group"
         }));
+        console.log("Contact Users:", contactUsers);
+        console.log("User Groups:", userGroups);
+        return [...contactUsers, ...userGroups];
     },
 });
 

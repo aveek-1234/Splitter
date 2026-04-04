@@ -13,6 +13,7 @@ export function useFetchQuery<T>(query: Parameters<typeof useQuery>[0], args?: P
   const [error, setError] = useState("");
 
   useEffect(() => {
+      console.log("Query Response:", response);
     if (response === undefined) {
       setLoading(true);
     } else if (response === null) {
