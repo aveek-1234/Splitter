@@ -78,5 +78,8 @@ jobs:
             docker stop myapp || true
             docker rm myapp || true
             docker run -d -p 3000:3000 \
-              --env-file /home/${{ secrets.VPS_USER }}/.env.production \
+              -e CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }} \
+              -e CLERK_JWT_ISSUER_DOMAIN=${{ secrets.CLERK_JWT_ISSUER_DOMAIN }} \
+              -e RESEND_API_KEY=${{ secrets.RESEND_API_KEY }} \
+              -e GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
               --name myapp myapp
