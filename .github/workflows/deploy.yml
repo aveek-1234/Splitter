@@ -67,6 +67,13 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            cd /home/${{ secrets.VPS_USER }}
+            echo "Checking files..."
+            ls -lh
+            if [ ! -f myapp.tar ]; then
+              echo "ERROR: myapp.tar not found!"
+              exit 1
+            fi
             docker load < myapp.tar
             docker stop myapp || true
             docker rm myapp || true
