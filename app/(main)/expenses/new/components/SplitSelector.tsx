@@ -77,7 +77,6 @@ export function SplitSelector({
       ) : (
         <div className="space-y-1">
           {localSplits?.map((split) => {
-            debugger
             const participant = participants.find(
               (p) => p?._id === split.userId
             )!
@@ -107,7 +106,6 @@ export function SplitSelector({
                           setPercentSplits((prev) => {
                             const next = prev.map((s) =>
                             {
-                            debugger;
                             console.log(s.userId, split.userId, percentage) 
                             s=s.userId === split.userId ? { ...s, percentage } : s
                             console.log(s);

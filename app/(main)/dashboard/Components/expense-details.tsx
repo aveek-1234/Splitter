@@ -31,28 +31,28 @@ function ExpenseDetails({ expenses }: { expenses: GetTotalSpentResult | undefine
       <CardHeader>
         <CardTitle>Expense Summary</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-muted rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Total this month</p>
-            <h3 className="text-2xl font-bold mt-1">
-              {expenses?.monthlySpent[currentMonth]}
+      <CardContent className='space-y-4'>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-muted rounded-lg p-3">
+            <p className="text-xs text-muted-foreground">This month</p>
+            <h3 className="text-lg font-bold mt-1">
+              ${expenses?.monthlySpent[currentMonth]?.toFixed(2) ?? "0.00"}
             </h3>
           </div>
-          <div className="bg-muted rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Total this year</p>
-            <h3 className="text-2xl font-bold mt-1">
-              {expenses?.totalSpent}
+          <div className="bg-muted rounded-lg p-3">
+            <p className="text-xs text-muted-foreground">This year</p>
+            <h3 className="text-lg font-bold mt-1">
+              ${expenses?.totalSpent?.toFixed(2) ?? "0.00"}
             </h3>
           </div>
         </div>
 
-        <div className="h-64 mt-6">
+        <div className="h-48 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={prepareData()}>
+            <BarChart data={prepareData()} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="month" />
-              <YAxis />
+              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} width={30} />
               <Tooltip
                 formatter={(value) => {
                   if (typeof value === "number") {
@@ -68,8 +68,8 @@ function ExpenseDetails({ expenses }: { expenses: GetTotalSpentResult | undefine
           </ResponsiveContainer>
         </div>
 
-        <p className="text-xs text-muted-foreground text-center mt-2">
-          Monthly spending for {currentYear}
+        <p className="text-xs text-muted-foreground text-center">
+          Spending by month - {currentYear}
         </p>
       </CardContent>
     </Card>

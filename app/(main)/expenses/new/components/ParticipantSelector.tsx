@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { User } from "@/lib/models"
@@ -28,6 +28,11 @@ export function ParticipantSelector({
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
 
+  const uniqueSelectedParticipants = useMemo(
+    () => selectedParticipants.filter((p, index, arr) => arr.findIndex(q => q._id === p._id) === index),
+    [selectedParticipants]
+  )
+
   const shouldSearch = searchQuery.trim().length > 0
 
   const { data: searchedUser, loading: isLoadingUser } = useFetchQuery<User>(
@@ -47,13 +52,13 @@ export function ParticipantSelector({
   const handleParticipantToggle = (participant: User, isChecked: boolean) => {
     if (isChecked) {
       // Add participant if not already selected
-      if (!selectedParticipants.find((p) => p._id === participant._id)) {
-        onChange([...selectedParticipants, participant])
+      if (!uniqueSelectedParticipants.find((p) => p._id === participant._id)) {
+        onChange([...uniqueSelectedParticipants, participant])
         setSearchQuery("")
       }
     } else {
       // Remove participant
-      onChange(selectedParticipants.filter((p) => p._id !== participant._id))
+      onChange(uniqueSelectedParticipants.filter((p) => p._id !== participant._id))
     }
   }
 
@@ -77,10 +82,10 @@ export function ParticipantSelector({
           disabled && "opacity-50 cursor-not-allowed"
         )}
       >
-        {selectedParticipants?.length === 0 ? (
+        {uniqueSelectedParticipants?.length === 0 ? (
           <span className="text-sm text-muted-foreground">Select participants...</span>
         ) : (
-          selectedParticipants?.filter((participant)=>participant && participant._id && participant.name).map((participant) => (
+          uniqueSelectedParticipants?.filter((participant)=>participant && participant._id && participant.name).map((participant) => (
             <Badge key={participant._id} variant="secondary" className="pr-1">
               <span className="truncate max-w-xs">{participant.name}</span>
               <button
@@ -106,7 +111,7 @@ export function ParticipantSelector({
       >
         <span className="flex items-center gap-2">
           <Users className="h-4 w-4" />
-          {`${selectedParticipants.length} selected`}
+          {`${uniqueSelectedParticipants.length} selected`}
         </span>
         <span className={cn("transition-transform", isOpen && "rotate-180")}>▼</span>
       </Button>

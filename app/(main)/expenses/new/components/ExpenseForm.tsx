@@ -124,11 +124,17 @@ function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
   }, [type, groupIdValue, userGroups,selectedGroup]);
 
 
-  const participants = useMemo(()=>{
-    if(type!="group" && currentUser)
-      return [...selectedParticipants, currentUser];
-    return selectedParticipants;
-  },[selectedParticipants])
+  const participants = useMemo(() => {
+    if (type !== "group" && currentUser) {
+      const currentUserSelected = selectedParticipants.some(
+        (participant) => participant._id === currentUser._id
+      )
+      return currentUserSelected
+        ? selectedParticipants
+        : [...selectedParticipants, currentUser]
+    }
+    return selectedParticipants
+  }, [type, currentUser, selectedParticipants])
 
   if(!currentUser) return null;
 
