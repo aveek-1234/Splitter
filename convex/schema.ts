@@ -27,7 +27,7 @@ export default defineSchema({
         paid: v.boolean(),
       })
     ),
-    groupId: v.optional(v.id("groups")), // null for one-on-one expenses
+    groupId: v.union(v.id("groups"), v.null()), // null for one-on-one expenses
     createdBy: v.id("users"), // Reference to users table
   })
     .index("by_group", ["groupId"])
