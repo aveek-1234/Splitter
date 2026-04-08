@@ -37,7 +37,7 @@ function GroupList({ groupExpenses }: { groupExpenses: GroupWithBalance[] | unde
                 group.balance > 0 ? 'text-green-600' : group.balance < 0 ? 'text-red-600' : 'text-muted-foreground'
               }`}
             >
-              ${group.balance.toFixed(2)}
+              ₹{group.balance.toFixed(2)}
             </p>
           </div>
         </div>

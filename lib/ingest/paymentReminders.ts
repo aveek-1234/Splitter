@@ -19,7 +19,7 @@ export const paymentReminders = inngest.createFunction(
             `
                <tr>
                   <td style="padding:4px 8px;">${debt.name}</td>
-                  <td style="padding:4px 8px;">$${debt.amount.toFixed(2)}</td>
+                  <td style="padding:4px 8px;">₹${debt.amount.toFixed(2)}</td>
                 </tr>
             `
             )

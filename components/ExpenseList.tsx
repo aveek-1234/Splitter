@@ -9,7 +9,6 @@ import { format } from 'date-fns/format';
 import { Badge, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 import { Id } from '@/convex/_generated/dataModel';
-import { Avatar, AvatarFallback } from '@radix-ui/react-avatar';
 
 type ExpenseDetailsProps = {
   expenses: Expense[];
@@ -81,8 +80,8 @@ function ExpenseList(
          return (
           <Card key={expense._id}>
             <CardContent >
-              <div className='flex items-center justify-between'>
-                <div className='flex items-center gap-3'>
+              <div className='flex items-center justify-between gap-4'>
+                <div className='flex items-center gap-3 flex-1'>
                 {CategoryIcon && (
                   <span className="text-xl text-primary">
                     {CategoryIcon && <CategoryIcon/>}
@@ -90,12 +89,12 @@ function ExpenseList(
                 )}
                 <div>
                   <h3>{expense.description}</h3>
-                  <div>
+                  <div className="text-sm text-gray-600">
                     <span>
                       {format(new Date(expense.date), "MMM d, yyyy")}
                     </span>
                     {showPayerInGroup &&(
-                      <span>
+                      <span className="ml-2">
                         {payerName} paid
                       </span>
                     )}
@@ -103,39 +102,18 @@ function ExpenseList(
                 </div>
 
                 </div>
-                <div>
-                  <div className="text-lg font-semibold">
-                    ${expense.amount.toFixed(2)}
-                  </div>
+                <div className="text-lg font-semibold flex-shrink-0">
+                  ₹{expense.amount.toFixed(2)}
+                </div>
                 {showDeleteOption && (
                   <button
-                    className="ml-2 p-1 rounded hover:bg-red-100 text-red-600"
+                    className="p-1 rounded hover:bg-red-100 text-red-600 flex-shrink-0"
                     title="Delete expense"
                     onClick={()=>handleDeleteExpense(expense)}
-                    // You can implement onClick handler in parent or add here
                   >
                     <Trash className="w-5 h-5" />
                   </button>
                 )}
-                </div>
-                <div className="flex flex-row items-center gap-2">
-                  {
-                    expense.splits.map((split, id)=>{
-                      const splitUser= getPayerName(split.userId);
-                      return(
-                      <Badge key={id}>
-                        <Avatar>
-                          <AvatarFallback>
-                            {splitUser.charAt(0)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span>
-                          {splitUser} : <span className="inline-block align-middle ml-1 mr-0.5 text-base">₹ {split.amount.toFixed(2)}</span>
-                        </span>
-                      </Badge>)
-                    })
-                  }
-                </div>
               </div>
             </CardContent>
           </Card>
