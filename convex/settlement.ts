@@ -114,8 +114,8 @@ export const getSettlements = query({
       if(!otherUser){
         throw new Error("User not found");
       }
-      const currentUserExpeses= await ctx.db.query("expenses").withIndex("by_user_and_group", q => q.eq("paidByUserId", currentUser._id as Id<"users">).eq("groupId",undefined)).collect();
-      const otherUserExpeses= await ctx.db.query("expenses").withIndex("by_user_and_group", q => q.eq("paidByUserId", userId).eq("groupId",undefined)).collect();
+      const currentUserExpeses= await ctx.db.query("expenses").withIndex("by_user_and_group", q => q.eq("paidByUserId", currentUser._id as Id<"users">).eq("groupId",null)).collect();
+      const otherUserExpeses= await ctx.db.query("expenses").withIndex("by_user_and_group", q => q.eq("paidByUserId", userId).eq("groupId",null)).collect();
       const expenses = [...currentUserExpeses, ...otherUserExpeses];
 
       let owedByCurrentUser = 0;
