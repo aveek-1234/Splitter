@@ -24,6 +24,11 @@ export const getAllContacts = query({
     handler: async (ctx) => {
         const currentUser = await ctx.runQuery(api.users.getCurrentUser);
 
+        if(!currentUser){
+            console.error("No current user found");
+            return [];
+        }
+
         const expensesYouPaid= await ctx.db.query('expenses').withIndex("by_user_and_group",(q)=>q.eq("paidByUserId", currentUser._id).eq("groupId", null)).collect();
         const expensesNotPaidByYou= (await ctx.db
                                             .query('expenses')
