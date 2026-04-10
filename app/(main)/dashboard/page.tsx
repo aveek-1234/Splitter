@@ -56,21 +56,21 @@ function Dashboard() {
                 userBalances.userIsOwed - userBalances.userOwe > 0 ? (
                   <>
                     <p className="text-3xl font-bold text-green-600">
-                      ${(userBalances.userIsOwed - userBalances.userOwe).toFixed(2)}
+                      ₹{(userBalances.userIsOwed - userBalances.userOwe).toFixed(2)}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">You are owed</p>
                   </>
                 ) : (
                   <>
                     <p className="text-3xl font-bold text-red-600">
-                      ${(userBalances.userOwe - userBalances.userIsOwed).toFixed(2)}
+                      ₹{(userBalances.userOwe - userBalances.userIsOwed).toFixed(2)}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">You owe</p>
                   </>
                 )
               ) : (
                 <>
-                  <p className="text-3xl font-bold text-gray-500">$0.00</p>
+                  <p className="text-3xl font-bold text-gray-500">₹0.00</p>
                   <p className="text-xs text-muted-foreground mt-1">Balanced</p>
                 </>
               )}
@@ -85,7 +85,7 @@ function Dashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-green-600">
-                ${userBalances?.userIsOwed?.toFixed(2) ?? "0.00"}
+                ₹{userBalances?.userIsOwed?.toFixed(2) ?? "0.00"}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 from {userBalances?.owingDetails?.userIsOwed?.length ?? 0} people
@@ -101,7 +101,7 @@ function Dashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-red-600">
-                ${userBalances?.userOwe?.toFixed(2) ?? "0.00"}
+                ₹{userBalances?.userOwe?.toFixed(2) ?? "0.00"}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
                 to {userBalances?.owingDetails?.userOwe?.length ?? 0} people

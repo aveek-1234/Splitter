@@ -189,7 +189,7 @@ export default function SettlementPage() {
                     <div className="flex-1">
                       <p>{member.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        Owes you: ${member.netBalance.toFixed(2)}
+                        Owes you: ₹{member.netBalance.toFixed(2)}
                       </p>
                     </div>
                     {selectedUsers.has(member.userId) && (
