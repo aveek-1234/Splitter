@@ -24,10 +24,15 @@ export const getAllContacts = query({
     handler: async (ctx) => {
         const currentUser = await ctx.runQuery(api.users.getCurrentUser);
 
-        const expensesYouPaid= await ctx.db.query('expenses').withIndex("by_user_and_group",(q)=>q.eq("paidByUserId", currentUser._id).eq("groupId", undefined)).collect();
+        if(!currentUser){
+            console.error("No current user found");
+            return [];
+        }
+
+        const expensesYouPaid= await ctx.db.query('expenses').withIndex("by_user_and_group",(q)=>q.eq("paidByUserId", currentUser._id).eq("groupId", null)).collect();
         const expensesNotPaidByYou= (await ctx.db
                                             .query('expenses')
-                                            .withIndex("by_group",(q)=>q.eq("groupId", undefined))
+                                            .withIndex("by_group",(q)=>q.eq("groupId", null))
                                             .collect()).filter((expense) => expense.paidByUserId !== currentUser._id && expense.splits.some((split) => split.userId === currentUser._id));
         const personalExpenses= [...expensesYouPaid, ...expensesNotPaidByYou];
         const contIds= new Set();

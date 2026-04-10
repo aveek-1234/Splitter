@@ -17,7 +17,7 @@ export const createExpense: ReturnType<typeof mutation> = mutation({
         paid: v.boolean(),
       })
     ),
-    groupId: v.optional(v.id("groups")),
+    groupId: v.union(v.id("groups"), v.null()),
     },
     handler:async(ctx, args)=>{
         const user = await ctx.runQuery(api.users.getCurrentUser);
