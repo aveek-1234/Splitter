@@ -111,10 +111,10 @@ export default function SettlementPage() {
 
   if (data.type === "user") {
     const otherUser = data.otheruserDetails;
-    const otherUserBalance = data.balanceDetails.find(
-      (b) => b.userId === otherUser?._id
+    const userBalance = data.balanceDetails.find(
+      (b) => b.userId != otherUser?._id
     );
-    const shouldShowSettlement = otherUserBalance && otherUserBalance.netBalance < 0;
+    const shouldShowSettlement = userBalance && userBalance.netBalance < 0;
 
     return (
       <div className="container mx-auto p-4">

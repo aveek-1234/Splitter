@@ -172,7 +172,7 @@ function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
         paidByUserId: data.paidByUserId,
         splitType: data.splitType,
         splits,
-        groupId: type === "group" ? data.groupId : undefined,
+        groupId: type === "group" ? data.groupId : null,
       });
       onSuccess(type==="individual"? participants?.[1]?._id as string : selectedGroup?.id as string);
       reset();
