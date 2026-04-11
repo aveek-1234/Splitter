@@ -27,7 +27,7 @@ function BalanceDetails({ balances }: { balances: GetUserBalancesResult | undefi
               {userIsOwedDetails.slice(0, 5).map((detail) => (
                 <li key={detail.userId} className='text-xs flex justify-between'>
                   <span className='truncate'>{detail.name}</span>
-                  <span className='text-green-600 font-medium'>${detail.netBalance.toFixed(2)}</span>
+                  <span className='text-green-600 font-medium'>₹{detail.netBalance.toFixed(2)}</span>
                 </li>
               ))}
             </ul>
@@ -47,7 +47,7 @@ function BalanceDetails({ balances }: { balances: GetUserBalancesResult | undefi
               {userOweDetails && userOweDetails.slice(0, 5).map((detail) => (
                 <li key={detail.userId} className='text-xs flex justify-between'>
                   <span className='truncate'>{detail.name}</span>
-                  <span className='text-red-600 font-medium'>${detail.netBalance.toFixed(2)}</span>
+                  <span className='text-red-600 font-medium'>₹{detail.netBalance.toFixed(2)}</span>
                 </li>
               ))}
             </ul>

@@ -36,13 +36,13 @@ function ExpenseDetails({ expenses }: { expenses: GetTotalSpentResult | undefine
           <div className="bg-muted rounded-lg p-3">
             <p className="text-xs text-muted-foreground">This month</p>
             <h3 className="text-lg font-bold mt-1">
-              ${expenses?.monthlySpent[currentMonth]?.toFixed(2) ?? "0.00"}
+              ₹{expenses?.monthlySpent[currentMonth]?.toFixed(2) ?? "0.00"}
             </h3>
           </div>
           <div className="bg-muted rounded-lg p-3">
             <p className="text-xs text-muted-foreground">This year</p>
             <h3 className="text-lg font-bold mt-1">
-              ${expenses?.totalSpent?.toFixed(2) ?? "0.00"}
+              ₹{expenses?.totalSpent?.toFixed(2) ?? "0.00"}
             </h3>
           </div>
         </div>
@@ -56,10 +56,10 @@ function ExpenseDetails({ expenses }: { expenses: GetTotalSpentResult | undefine
               <Tooltip
                 formatter={(value) => {
                   if (typeof value === "number") {
-                    return [`$${value.toFixed(2)}`, "Amount"];
+                    return [`₹${value.toFixed(2)}`, "Amount"];
                   }
                   const num = Number(value);
-                  return [isNaN(num) ? "$0.00" : `$${num.toFixed(2)}`, "Amount"];
+                  return [isNaN(num) ? "₹0.00" : `₹${num.toFixed(2)}`, "Amount"];
                 }}
                 labelFormatter={() => "Spending"}
               />

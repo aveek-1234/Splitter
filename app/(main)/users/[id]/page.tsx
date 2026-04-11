@@ -16,7 +16,7 @@ import React, { useState } from 'react';
 const Userpage = () => {
   const [activetab, setActiveTab] = useState(toggleViewOptions[0]);
   const params = useParams();
-  const router= useRouter()
+  const router= useRouter();
   const { data, loading, error } = useFetchQuery(
     api.individualExpenses.getIndividualExpenses,
     {userId:params.id}
@@ -118,12 +118,12 @@ const Userpage = () => {
         )}
         {balance > 0 && (
           <div className="text-green-600 text-lg font-bold">
-            ${balance.toFixed(2)}
+            ₹{balance.toFixed(2)}
           </div>
         )}
         {balance < 0 && (
           <div className="text-red-600 text-lg font-bold">
-            ${Math.abs(balance).toFixed(2)}
+            ₹{Math.abs(balance).toFixed(2)}
           </div>
         )}
         </CardContent>

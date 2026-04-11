@@ -42,6 +42,7 @@ function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
   const [selectedParticipants, setSelectedParticipants] = useState<User[]>([]);
   const [selectedGroup, setSelectedGroup] = useState<GroupWithMembers | null>(null);
   const [splits, setSplits] = useState<Split[]>([]);
+  const [showParticipantError, setShowParticipantError] = useState(false);
 
   // Get group data with members for group expenses.  the API returns
   // "GroupWithMembers" objects (see GroupSelector) so we can read each
@@ -84,6 +85,13 @@ function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
   const total = parseFloat(amount) || 0;
   const splitsTotal = splits.reduce((sum, s) => sum + s.amount, 0);
   const splitsMismatch = Math.abs(splitsTotal - total) > 0.01;
+
+  // Clear participant error when participants change
+  useEffect(() => {
+    if (showParticipantError && selectedParticipants.length >= 2) {
+      setShowParticipantError(false);
+    }
+  }, [selectedParticipants.length, showParticipantError]);
 
   // keep track of the groupId field so we can derive selectedGroup for other logic
   const groupIdValue = watch("groupId");
@@ -146,6 +154,14 @@ function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
       // mismatch - should already be disabled, but guard anyway
       return;
     }
+    if (type === "individual" && selectedParticipants.length < 2) {
+      // insufficient participants - show error and prevent submission
+      setShowParticipantError(true);
+      return;
+    }
+
+    // Clear any previous error when proceeding with valid submission
+    setShowParticipantError(false);
 
     try {
       const expenseId = await createExpense.mutate({
@@ -158,7 +174,7 @@ function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
         splits,
         groupId: type === "group" ? data.groupId : undefined,
       });
-      onSuccess(type==="individual"? participants?.[0]?._id as string : selectedGroup?.id as string);
+      onSuccess(type==="individual"? participants?.[1]?._id as string : selectedGroup?.id as string);
       reset();
     } catch (err) {
       console.error("failed to create expense", err);
@@ -342,6 +358,11 @@ function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
         <p className="text-red-500">
           The split amounts ({splitsTotal.toFixed(2)}) must add up to the
           total ({total.toFixed(2)}).
+        </p>
+      )}
+      {showParticipantError && (
+        <p className="text-red-500">
+          Please select at least 2 participants to split the expense.
         </p>
       )}
       <div className="pt-4">
