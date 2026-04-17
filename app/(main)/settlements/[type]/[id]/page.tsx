@@ -80,8 +80,8 @@ export default function SettlementPage() {
       }
       return {
         amount,
-        paidByUserId: userId as any,
-        receivedByUserId: currentUser._id,
+        paidByUserId: currentUser._id,
+        receivedByUserId: userId as string,
         groupId: data.group.id,
       };
     });

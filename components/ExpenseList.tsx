@@ -54,7 +54,7 @@ function ExpenseList(
 
   function canDeleteExpense(expense: Expense): boolean {
     if (!currentUser) return false;
-    return expense.createdBy === currentUser._id || expense.paidByUserId === currentUser._id;
+    return  expense.paidByUserId === currentUser._id;
   }
 
   async function handleDeleteExpense(expense: Expense){
@@ -102,12 +102,12 @@ function ExpenseList(
                 </div>
 
                 </div>
-                <div className="text-lg font-semibold flex-shrink-0">
+                <div className="text-lg font-semibold shrink-0">
                   ₹{expense.amount.toFixed(2)}
                 </div>
                 {showDeleteOption && (
                   <button
-                    className="p-1 rounded hover:bg-red-100 text-red-600 flex-shrink-0"
+                    className="p-1 rounded hover:bg-red-100 text-red-600 shrink-0"
                     title="Delete expense"
                     onClick={()=>handleDeleteExpense(expense)}
                   >
