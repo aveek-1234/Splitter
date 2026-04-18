@@ -1,16 +1,18 @@
-name: Deploy to VPS
+name: Deploy to VPS + Worker
 
 on:
+  push:
+    branches:
+      - '**'
   pull_request:
     branches:
       - master
-
   workflow_dispatch:
     inputs:
       branch:
-        description: "Branch to deploy"
-        required: true
-        default: "master"
+        description: 'Branch to deploy'
+        required: false
+        default: 'master'
 
 jobs:
   build:
@@ -20,8 +22,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch || github.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref_name }}
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      # ✅ Build first
       - name: Build Docker image
         run: |
           docker build \
@@ -41,11 +52,25 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-
-    # 👇 THIS IS THE MAGIC LINE (approval required)
+    if: github.event_name != 'pull_request'
     environment: production
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref_name }}
+
+      # ✅ Deploy Worker AFTER build success
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Deploy Worker
+        run: wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -68,12 +93,6 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
             cd /home/${{ secrets.VPS_USER }}
-            echo "Checking files..."
-            ls -lh
-            if [ ! -f myapp.tar ]; then
-              echo "ERROR: myapp.tar not found!"
-              exit 1
-            fi
             docker load < myapp.tar
             docker stop myapp || true
             docker rm myapp || true
