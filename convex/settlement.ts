@@ -145,15 +145,17 @@ export const getSettlements = query({
       for(const settlement of settlements){
         if(settlement.paidByUserId===currentUser._id){
           if(settlement.receivedByUserId === otherUser._id){
-            owedToCurrentUser -= settlement.amount;
+            owedByCurrentUser -= settlement.amount;
+            console.log("owedByCurrentUser", owedByCurrentUser);
           }
         }
         if(settlement.paidByUserId===otherUser._id){
           if(settlement.receivedByUserId === currentUser._id){
-            owedByCurrentUser -= settlement.amount;
+            owedToCurrentUser -= settlement.amount;
           }
         }
       }
+       console.log("owedToCurrentUser", owedToCurrentUser);
       return {
         type: "user",
         group: null,
