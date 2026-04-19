@@ -63,9 +63,11 @@ jobs:
 
       # ✅ Deploy Worker AFTER build success
       - name: Install Wrangler
+        working-directory: ./splitterhub-edge-auth
         run: npm install -g wrangler
 
       - name: Deploy Worker
+        working-directory: ./splitterhub-edge-auth
         run: wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
