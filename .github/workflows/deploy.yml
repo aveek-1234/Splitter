@@ -94,6 +94,8 @@ jobs:
               -e CLERK_JWT_ISSUER_DOMAIN=${{ secrets.CLERK_JWT_ISSUER_DOMAIN }} \
               -e RESEND_API_KEY=${{ secrets.RESEND_API_KEY }} \
               -e GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+              -e NEXT_PUBLIC_CONVEX_URL=${{ secrets.NEXT_PUBLIC_CONVEX_URL }} \
+              -e NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }} \
               --name myapp myapp
 
   # -----------------------
