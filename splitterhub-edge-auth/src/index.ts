@@ -10,6 +10,19 @@ export default {
     const path = url.pathname.toLowerCase();
     const ip = request.headers.get("cf-connecting-ip") || "unknown";
 
+    function isStaticAsset(path: string) {
+    return (
+      path.startsWith("/_next") ||
+      path.startsWith("/static") ||
+      path.startsWith("/images") ||
+      /\.(css|js|png|jpg|jpeg|svg|ico|woff|woff2)$/.test(path)
+    );
+    }
+
+  if (isStaticAsset(path)) {
+    return fetch(request);
+  }
+
     // -------------------------
     // 🚨 Bot / attack detection
     // -------------------------
