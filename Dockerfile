@@ -13,8 +13,7 @@ ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
 
 # Install dependencies
-RUN npm ci --only=production && \
-    npm ci --save-dev
+RUN npm ci
 
 # Copy source code
 COPY . .
