@@ -151,13 +151,13 @@ export const getIndividualExpenses = query({
         settlement.receivedByUserId.toString() === me._id.toString()
       ) {
         // userId paid me => user paid their debt
-        balance += settlement.amount;
+        balance -= settlement.amount;
       } else if (
         settlement.paidByUserId.toString() === me._id.toString() &&
         settlement.receivedByUserId.toString() === userId.toString()
       ) {
         // I paid userId (settling my debt)
-        balance -= settlement.amount;
+        balance += settlement.amount;
       }
     }
 
