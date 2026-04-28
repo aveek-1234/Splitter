@@ -9,13 +9,22 @@ const isProtectedRoute = createRouteMatcher([
   '/settlements(.*)',
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
-  if (!isProtectedRoute(req)) return;
+const allowedRoutes = createRouteMatcher([
+  '/api/inngest(.*)',
+  '/api/auth(.*)',
+  '/api/webhooks(.*)',
+  '/api/trpc(.*)',
+]);
 
-  const session = await auth();
-
-  if (!session.userId) {
-    return session.redirectToSignIn(); // ✅ single auth() call
+export default clerkMiddleware(async(auth,req)=>{
+  console.log("MIDDLEWARE HIT:", req.nextUrl.pathname);
+  if (allowedRoutes(req)) {
+    return NextResponse.next();
+  }
+  const {userId} = await auth();
+  if(!userId && isProtectedRoute(req)) {
+     const {redirectToSignIn} = await auth();
+     return redirectToSignIn();
   }
 });
 

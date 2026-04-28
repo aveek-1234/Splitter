@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
-import {Resend} from 'resend'
+import { Resend } from "resend";
 
 export const sendEmail = action({
   args: {
@@ -8,23 +8,28 @@ export const sendEmail = action({
     subject: v.string(),
     html: v.string(),
     text: v.optional(v.string()),
-    apiKey: v.string(),
   },
   handler: async (ctx, args) => {
-    const resend = new Resend(args.apiKey);
+    const resend = new Resend(process.env.RESEND_API_KEY!);
+
+    console.log("Sending email to:", args.to);
 
     try {
-        await resend.emails.send({
-            from:"Splitr <onboarding@resend.dev>",
-            to: args.to,
-            // to:"aveekkarmakar28@gmail.com",
-            subject:args.subject,
-            html: args.html,
-            text:args.text
-        })
-        return {success:true}
+      const result = await resend.emails.send({
+        from: "SplitterHub <noreply@splitterhub.cloud>",
+        to: args.to,
+        subject: args.subject,
+        html: args.html,
+        text: args.text,
+      });
+      console.log("RESEND RESULT:", JSON.stringify(result, null, 2));
+      return { success: true };
+      if (result.error){
+        return { success: false };    
+      }
     } catch (error) {
-        return {success:false}
+      console.error("Resend error:", error);
+      return { success: false };
     }
   },
 });
