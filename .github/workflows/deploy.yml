@@ -15,6 +15,9 @@ on:
         default: 'master'
 
 jobs:
+  # -----------------------
+  # 🧱 BUILD
+  # -----------------------
   build:
     runs-on: ubuntu-latest
 
@@ -32,7 +35,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      # ✅ Build first
       - name: Build Docker image
         run: |
           docker build \
@@ -49,7 +51,10 @@ jobs:
           name: myapp-image
           path: myapp.tar
 
-  deploy:
+  # -----------------------
+  # 🚀 VPS DEPLOY
+  # -----------------------
+  deploy-vps:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
@@ -58,18 +63,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref_name }}
-
-      # ✅ Deploy Worker AFTER build success
-      - name: Install Wrangler
-        run: npm install -g wrangler
-
-      - name: Deploy Worker
-        run: wrangler deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -101,4 +94,33 @@ jobs:
               -e CLERK_JWT_ISSUER_DOMAIN=${{ secrets.CLERK_JWT_ISSUER_DOMAIN }} \
               -e RESEND_API_KEY=${{ secrets.RESEND_API_KEY }} \
               -e GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+              -e NEXT_PUBLIC_CONVEX_URL=${{ secrets.NEXT_PUBLIC_CONVEX_URL }} \
+              -e NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }} \
               --name myapp myapp
+
+  # -----------------------
+  # 🌍 WORKER DEPLOY
+  # -----------------------
+  deploy-worker:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Worker Dependencies
+        working-directory: ./splitterhub-edge-auth
+        run: npm install
+
+      - name: Install Wrangler
+        working-directory: ./splitterhub-edge-auth
+        run: npm install wrangler
+
+      - name: Deploy Worker
+        working-directory: ./splitterhub-edge-auth
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
