@@ -6,10 +6,13 @@ import OpenAI from "openai";
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 // Groq Client
-const groq = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY!,
-  baseURL: "https://api.groq.com/openai/v1",
-});
+
+function getGroqClient() {
+  return new OpenAI({
+    apiKey: process.env.GROQ_API_KEY!,
+    baseURL: "https://api.groq.com/openai/v1",
+  });
+}
 
 export const spendingInsights = inngest.createFunction(
   {
@@ -19,6 +22,7 @@ export const spendingInsights = inngest.createFunction(
     cron: "0 10 * * *",
   },
   async ({ step }) => {
+    const groq = getGroqClient();
     const users = await step.run("Get Users With Expenses", async () => {
       return await convex.query(api.inngest.getUsersWithExpenses);
     });

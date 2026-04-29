@@ -60,20 +60,29 @@ export const getUserMonthlyExpenses = query({
 
 export const getUsersWithDebts = query({
   handler: async (ctx) => {
+    console.log("[getUsersWithDebts] Starting execution...");
+    
     const users = await ctx.db.query("users").collect();
+    console.log("[getUsersWithDebts] Fetched users:", users.length);
+    console.log("[getUsersWithDebts] Users:", JSON.stringify(users.map(u => ({ _id: u._id, name: u.name, email: u.email }))));
+
     const finalResult = [];
 
-    // Load every 1‑to‑1 expense once (groupId === undefined)
+    // Load every 1‑to‑1 expense once (groupId === null || groupId === undefined)
     const expenses = await ctx.db
       .query("expenses")
       .filter((q) => q.eq(q.field("groupId"), null))
       .collect();
+    console.log("[getUsersWithDebts] Fetched expenses:", expenses.length);
+    console.log("[getUsersWithDebts] Expenses:", JSON.stringify(expenses.map(e => ({ _id: e._id, amount: e.amount, paidByUserId: e.paidByUserId, splits: e.splits }))));
 
-    // Load every 1‑to‑1 settlement once (groupId === undefined)
+    // Load every 1‑to‑1 settlement once (groupId === null || groupId === undefined)
     const settlements = await ctx.db
       .query("settlements")
       .filter((q) => q.eq(q.field("groupId"), null))
       .collect();
+    console.log("[getUsersWithDebts] Fetched settlements:", settlements.length);
+    console.log("[getUsersWithDebts] Settlements:", JSON.stringify(settlements.map(s => ({ _id: s._id, amount: s.amount, paidByUserId: s.paidByUserId, receivedByUserId: s.receivedByUserId }))));
 
     const userCache = new Map();
     const getUser = async (
@@ -134,7 +143,7 @@ export const getUsersWithDebts = query({
               _id: GenericId<"expenses">;
               _creationTime: number;
               category?: string | undefined;
-              groupId?: GenericId<"groups"> | undefined;
+              groupId?: GenericId<"groups"> | null;
               description: string;
               amount: number;
               date: number;
@@ -175,7 +184,7 @@ export const getUsersWithDebts = query({
             document: {
               _id: GenericId<"settlements">;
               _creationTime: number;
-              groupId?: GenericId<"groups"> | undefined;
+              groupId?: GenericId<"groups"> | null;
               note?: string | undefined;
               relatedExpenseIds?: GenericId<"expenses">[] | undefined;
               amount: number;
@@ -220,7 +229,10 @@ export const getUsersWithDebts = query({
     };
 
     for (const user of users) {
+      console.log(`[getUsersWithDebts] Processing user: ${user.name} (${user._id})`);
+      
       const ledger = new Map();
+      console.log(`[getUsersWithDebts] User ${user.name}: Starting expense processing...`);
 
       for (const expense of expenses) {
         if (expense.paidByUserId !== user._id) {
@@ -236,6 +248,7 @@ export const getUsersWithDebts = query({
           entry.amount += split.amount;
           entry.since = Math.min(entry.since, expense.date);
           ledger.set(expense.paidByUserId, entry);
+          console.log(`[getUsersWithDebts] User ${user.name}: Owes ${split.amount} to ${expense.paidByUserId} for expense ${expense._id}`);
         } else {
           for (const s of expense.splits) {
             if (s.userId === user._id || s.paid) continue;
@@ -246,10 +259,14 @@ export const getUsersWithDebts = query({
             };
             entry.amount -= s.amount;
             ledger.set(s.userId, entry);
+            console.log(`[getUsersWithDebts] User ${user.name}: Is owed ${s.amount} from ${s.userId} for expense ${expense._id}`);
           }
         }
       }
+      console.log(`[getUsersWithDebts] User ${user.name}: After expense processing, ledger size: ${ledger.size}`);
+      console.log(`[getUsersWithDebts] User ${user.name}: Ledger entries:`, JSON.stringify(Array.from(ledger.entries()).map(([k, v]) => ({ userId: k, amount: v.amount, since: v.since }))));
 
+      console.log(`[getUsersWithDebts] User ${user.name}: Starting settlement processing...`);
       for (const settlement of settlements) {
         if (settlement.paidByUserId === user._id) {
           const entry = ledger.get(settlement.receivedByUserId);
@@ -260,6 +277,7 @@ export const getUsersWithDebts = query({
             } else {
               ledger.set(settlement.receivedByUserId, entry);
             }
+            console.log(`[getUsersWithDebts] User ${user.name}: Settlement paid ${settlement.amount} to ${settlement.receivedByUserId}`);
           }
         } else if (settlement.receivedByUserId === user._id) {
           const entry = ledger.get(settlement.paidByUserId);
@@ -270,9 +288,13 @@ export const getUsersWithDebts = query({
             } else {
               ledger.set(settlement.receivedByUserId, entry);
             }
+            console.log(`[getUsersWithDebts] User ${user.name}: Settlement received ${settlement.amount} from ${settlement.paidByUserId}`);
           }
         }
       }
+      console.log(`[getUsersWithDebts] User ${user.name}: After settlement processing, ledger size: ${ledger.size}`);
+      console.log(`[getUsersWithDebts] User ${user.name}: Final ledger entries:`, JSON.stringify(Array.from(ledger.entries()).map(([k, v]) => ({ userId: k, amount: v.amount, since: v.since }))));
+
       const debts = [];
 
       for (const [userId, { amount, date }] of ledger) {
@@ -295,6 +317,7 @@ export const getUsersWithDebts = query({
         });
       }
     }
+    console.log("[getUsersWithDebts] Final result:", JSON.stringify(finalResult));
     return finalResult;
   },
 });
