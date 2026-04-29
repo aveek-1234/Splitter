@@ -2,110 +2,152 @@ import { ConvexHttpClient } from "convex/browser";
 import { inngest } from "./client";
 import { api } from "@/convex/_generated/api";
 
-const convex= new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL)
-
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export const paymentReminders = inngest.createFunction(
-  { id: "payment-reminders" },
-  {cron:"0 10 * * *",
-    throttle:{
-      limit:2,
-      period:"1s"
-    },
+  {
+    id: "payment-reminders",
   },
-  async({step})=>{
-    const users = await step.run("get-debts",()=>convex.query(api.inngest.getUsersWithDebts))
+  {
+    cron: "0 10 * * *",
+  },
+  async ({ step }) => {
+    console.log("[paymentReminders] Starting payment reminders job");
 
-    console.log("Users with debts:", users);
+    const users = await step.run("get-users-with-debts", async () => {
+      console.log("[paymentReminders] Fetching users with debts");
 
-    // const results= await step.run("send-emails",()=>{
-    //   return Promise.all(
-    //     users.map(
-    //       async(user)=>{
-    //         const row= user.debts.map((debt)=>
-    //         `
-    //            <tr>
-    //               <td style="padding:4px 8px;">${debt.name}</td>
-    //               <td style="padding:4px 8px;">₹${debt.amount.toFixed(2)}</td>
-    //             </tr>
-    //         `
-    //         )
-    //         .join("");
-    //        if(!row) return {userId:user._id, skipped:true};
-
-    //        const desiredtemplate=
-    //        `
-    //         <h2>Splitterr – Payment Reminder</h2>
-    //         <p>Hi ${user.name}, you have the following outstanding balances:</p>
-    //         <table cellspacing="0" cellpadding="0" border="1" style="border-collapse:collapse;">
-    //           <thead>
-    //             <tr><th>To</th><th>Amount</th></tr>
-    //           </thead>
-    //           <tbody>${row}</tbody>
-    //         </table>
-    //         <p>Please settle up soon. Thanks!</p>
-    //        `
-    //        try {
-    //          await convex.action(api.sendEmail.sendEmail,{
-    //           to:user.email,
-    //           subject:"Hi There Please clear Your Pending payments",
-    //           html:desiredtemplate,
-    //          })
-    //          return {success:true}
-    //        } catch (error) {
-    //         return {success:false}
-    //        }
-    //   }))
-    // })
-
-    const results = [];
-
-for (const user of users) {
-  const result = await step.run(`send-email-${user._id}`, async () => {
-    const rows = user.debts
-      .map(
-        (debt) => `
-        <tr>
-          <td style="padding:4px 8px;">${debt.name}</td>
-          <td style="padding:4px 8px;">₹${debt.amount.toFixed(2)}</td>
-        </tr>
-      `
-      )
-      .join("");
-
-    if (!rows) return { userId: user._id, skipped: true };
-
-    const template = `
-      <h2>Splitterr – Payment Reminder</h2>
-      <p>Hi ${user.name}, you have the following outstanding balances:</p>
-      <table border="1" style="border-collapse:collapse;">
-        <thead>
-          <tr><th>To</th><th>Amount</th></tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-      <p>Please settle up soon. Thanks!</p>
-    `;
-
-    const res = await convex.action(api.sendEmail.sendEmail, {
-      to: user.email,
-      subject: "Please clear your pending payments",
-      html: template,
+      return await convex.query(api.inngest.getUsersWithDebts);
     });
 
-    return res;
-  });
+    console.log(
+      `[paymentReminders] Found ${users?.length || 0} users with debts`,
+    );
 
-  results.push(result);
+    const results: { userId: string; success: boolean }[] = [];
 
-  // 👇 CRITICAL: prevent rate limit
-  await step.sleep(`rate-limit-${user._id}`, "600ms");
-}
+    for (const user of users) {
+      try {
+        console.log(
+          `[paymentReminders] Processing user: ${user.name} (${user.email})`,
+        );
+
+        const row = user.debts
+          .map(
+            (debt) => `
+              <tr>
+                <td style="padding:4px 8px;">
+                  ${debt.name}
+                </td>
+
+                <td style="padding:4px 8px;">
+                  ₹${debt.amount.toFixed(2)}
+                </td>
+              </tr>
+            `,
+          )
+          .join("");
+
+        if (!row) {
+          console.log(
+            `[paymentReminders] No debts found for ${user.name}, skipping`,
+          );
+
+          continue;
+        }
+
+        const htmlTemplate = `
+          <div style="font-family: Arial, sans-serif; line-height:1.6; color:#333;">
+            <h1 style="color:#dc2626;">
+              Payment Reminder
+            </h1>
+
+            <p>
+              Hi ${user.name},
+            </p>
+
+            <p>
+              You currently have the following outstanding balances:
+            </p>
+
+            <table
+              cellspacing="0"
+              cellpadding="0"
+              border="1"
+              style="border-collapse:collapse; width:100%;"
+            >
+              <thead>
+                <tr>
+                  <th style="padding:8px;">
+                    To
+                  </th>
+
+                  <th style="padding:8px;">
+                    Amount
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                ${row}
+              </tbody>
+            </table>
+
+            <p style="margin-top:20px;">
+              Please settle your pending balances soon.
+            </p>
+
+            <hr style="margin:30px 0;" />
+
+            <p style="font-size:14px; color:#666;">
+              Thank you for using Splitterr.
+            </p>
+          </div>
+        `;
+
+        await step.run(`send-email-${user._id}`, async () => {
+          console.log(`[paymentReminders] Sending email to ${user.email}`);
+
+          return await convex.action(api.sendEmail.sendEmail, {
+            to: user.email,
+            subject: "Pending Payment Reminder",
+            html: htmlTemplate,
+          });
+        });
+
+        console.log(
+          `[paymentReminders] Email sent successfully to ${user.email}`,
+        );
+
+        results.push({
+          userId: user._id,
+          success: true,
+        });
+
+        // Proper Inngest rate limiting
+        await step.sleep(`rate-limit-${user._id}`, "600ms");
+      } catch (error) {
+        console.error(`[paymentReminders] Failed for user ${user._id}`, error);
+
+        results.push({
+          userId: user._id,
+          success: false,
+        });
+      }
+    }
+
+    const successCount = results.filter((result) => result.success).length;
+
+    const failureCount = results.filter((result) => !result.success).length;
+
+    console.log(
+      `[paymentReminders] Completed. Processed: ${results.length}, Success: ${successCount}, Failures: ${failureCount}`,
+    );
 
     return {
       processed: results.length,
-      success:results.filter((result)=>"success" in result && result.success===true).length,
-      failure:results.filter((result)=>"success" in result && result.success===false).length
-    }
-  }
-)
+      success: successCount,
+      failure: failureCount,
+    };
+  },
+);
