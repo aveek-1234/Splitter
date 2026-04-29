@@ -10,25 +10,27 @@ export const sendEmail = action({
     text: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const resend = new Resend(process.env.RESEND_API_KEY!);
-
-    console.log("Sending email to:", args.to);
-
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.error("[sendEmail] RESEND_API_KEY is not set");
+      return { success: false, error: "Missing API key" };
+    }
+    
+    const resend = new Resend(apiKey);
+    console.log(
+      `[sendEmail] Sending email to: ${args.to} with subject: ${args.subject}`,
+    );
     try {
-      const result = await resend.emails.send({
+      await resend.emails.send({
         from: "SplitterHub <noreply@splitterhub.cloud>",
         to: args.to,
+        // to:"aveekkarmakar28@gmail.com",
         subject: args.subject,
         html: args.html,
         text: args.text,
       });
-      console.log("RESEND RESULT:", JSON.stringify(result, null, 2));
       return { success: true };
-      if (result.error){
-        return { success: false };    
-      }
     } catch (error) {
-      console.error("Resend error:", error);
       return { success: false };
     }
   },

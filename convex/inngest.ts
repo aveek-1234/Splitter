@@ -71,7 +71,7 @@ export const getUsersWithDebts = query({
     // Load every 1‑to‑1 expense once (groupId === null || groupId === undefined)
     const expenses = await ctx.db
       .query("expenses")
-      .filter((q) => q.or(q.eq(q.field("groupId"), null), q.eq(q.field("groupId"), undefined)))
+      .filter((q) => q.eq(q.field("groupId"), null))
       .collect();
     console.log("[getUsersWithDebts] Fetched expenses:", expenses.length);
     console.log("[getUsersWithDebts] Expenses:", JSON.stringify(expenses.map(e => ({ _id: e._id, amount: e.amount, paidByUserId: e.paidByUserId, splits: e.splits }))));
@@ -79,7 +79,7 @@ export const getUsersWithDebts = query({
     // Load every 1‑to‑1 settlement once (groupId === null || groupId === undefined)
     const settlements = await ctx.db
       .query("settlements")
-      .filter((q) => q.or(q.eq(q.field("groupId"), null), q.eq(q.field("groupId"), undefined)))
+      .filter((q) => q.eq(q.field("groupId"), null))
       .collect();
     console.log("[getUsersWithDebts] Fetched settlements:", settlements.length);
     console.log("[getUsersWithDebts] Settlements:", JSON.stringify(settlements.map(s => ({ _id: s._id, amount: s.amount, paidByUserId: s.paidByUserId, receivedByUserId: s.receivedByUserId }))));
@@ -308,19 +308,13 @@ export const getUsersWithDebts = query({
           });
         }
       }
-      console.log(`[getUsersWithDebts] User ${user.name}: Debts collected:`, JSON.stringify(debts));
-      
-      if(debts.length>0)
-      {
+      if (debts.length > 0) {
         finalResult.push({
-          _id:user._id,
-          name:user.name,
-          email:user.email,
-          debts
-        })
-        console.log(`[getUsersWithDebts] User ${user.name}: Added to final result with ${debts.length} debts`);
-      } else {
-        console.log(`[getUsersWithDebts] User ${user.name}: No debts, not added to result`);
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          debts,
+        });
       }
     }
     console.log("[getUsersWithDebts] Final result:", JSON.stringify(finalResult));
@@ -329,43 +323,40 @@ export const getUsersWithDebts = query({
 });
 
 export const getUsersWithExpenses = query({
-  handler: async (ctx)=>{
+  handler: async (ctx) => {
     const users = await ctx.db.query("users").collect();
-    const result= [];
+    const result = [];
 
-    const dateNow= new Date();
-    const prevMonth= new Date(dateNow)
-    prevMonth.setMonth(dateNow.getMonth()-1);
+    const dateNow = new Date();
+    const prevMonth = new Date(dateNow);
+    prevMonth.setMonth(dateNow.getMonth() - 1);
     const monthStart = prevMonth.getTime();
 
-    for(const user of users)
-    {
+    for (const user of users) {
       const paidExpenses = await ctx.db
-            .query("expenses")
-            .withIndex("by_date",(qr)=>qr.gte("date",monthStart))
-            .collect();
-      
+        .query("expenses")
+        .withIndex("by_date", (qr) => qr.gte("date", monthStart))
+        .collect();
+
       const allRecentExpenses = await ctx.db
-            .query("expenses")
-            .withIndex("by_date",(q)=>q.gte("date",monthStart))
-            .collect()
-      
-      const splitExpenses = allRecentExpenses.filter((expense)=>
-        expense.splits.some((split)=>split.userId === user._id)
+        .query("expenses")
+        .withIndex("by_date", (q) => q.gte("date", monthStart))
+        .collect();
+
+      const splitExpenses = allRecentExpenses.filter((expense) =>
+        expense.splits.some((split) => split.userId === user._id),
       );
 
       const userExpenses = [...new Set([...paidExpenses, ...splitExpenses])];
 
-      if(userExpenses.length>0)
-      {
+      if (userExpenses.length > 0) {
         result.push({
-          _id:user._id,
-          name:user.name,
-          email:user.email
-        })
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+        });
       }
     }
     return result;
-  }
-})
-
+  },
+});
