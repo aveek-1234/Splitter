@@ -14,7 +14,6 @@
     "types": ["node"],
 
     /* These compiler options are required by Convex */
-    "types": ["node"],
     "target": "ESNext",
     "lib": ["ES2021", "dom"],
     "forceConsistentCasingInFileNames": true,
