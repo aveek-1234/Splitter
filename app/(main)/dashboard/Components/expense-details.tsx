@@ -49,10 +49,20 @@ function ExpenseDetails({ expenses }: { expenses: GetTotalSpentResult | undefine
 
         <div className="h-48 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={prepareData()} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+            <BarChart data={prepareData()} margin={{ top: 5, right: 10, left: 60, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} width={30} />
+              <YAxis
+                tick={{ fontSize: 12 }}
+                width={50}
+                label={{
+                  value: "Spending in Rupees (₹)",
+                  angle: -90,
+                  position: "left",
+                  dx: -10,
+                  style: { textAnchor: "middle", fontSize: 12 },
+                }}
+              />
               <Tooltip
                 formatter={(value) => {
                   if (typeof value === "number") {

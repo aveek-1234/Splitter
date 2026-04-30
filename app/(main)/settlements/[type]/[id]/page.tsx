@@ -117,7 +117,7 @@ export default function SettlementPage() {
     const shouldShowSettlement = userBalance && userBalance.netBalance < 0;
 
     return (
-      <div className="container mx-auto p-4">
+      <div>
         <h1 className="text-2xl font-bold mb-4">Settle with {otherUser?.name}</h1>
         <Card>
           <CardHeader>
@@ -165,7 +165,7 @@ export default function SettlementPage() {
     const membersOwing = data.balanceDetails.filter((b) => b.netBalance > 0);
 
     return (
-      <div className="container mx-auto p-4">
+      <div>
         <h1 className="text-2xl font-bold mb-4">Settle in {group?.name}</h1>
         <Card>
           <CardHeader>

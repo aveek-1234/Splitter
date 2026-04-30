@@ -6,13 +6,15 @@ import Image from "next/image";
 export default function Home() {
   return (
     <div className="flex flex-col pt-16">
-      <section className="mt-20 pb-12 space-y-10 md:space-y-20 px-5">
+      <section className="pt-6 md:pt-8 pb-12 md:pb-16 px-4">
         <HeroComponent />
       </section>
-      <section id="features" className="bg-gray-50 py-20">
+      
+      <section id="features" className="bg-gray-50 py-16 md:py-20">
         <Features />
       </section>
-      <section id="steps" className="bg-gray-50 py-20">
+      
+      <section id="steps" className="bg-gray-50 py-16 md:py-20">
         <Steps />
       </section>
     </div>

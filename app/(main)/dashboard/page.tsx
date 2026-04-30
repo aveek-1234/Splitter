@@ -37,9 +37,9 @@ function Dashboard() {
       <>
         <div className='flex items-center justify-between'>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <Button>
-            <Link href="/expenses/new">
-              <PlusCircle className='mr-2 h-4 w-4'/>
+          <Button asChild>
+            <Link href="/expenses/new" className="inline-flex items-center gap-2">
+              <PlusCircle className='h-4 w-4'/>
               Add Expense
             </Link>
           </Button>
@@ -115,13 +115,11 @@ function Dashboard() {
           </div>
           <div className='md:col-span-1 space-y-4'>
             <Card>
-              <div className='flex items-center justify-between mb-2'>
-                <CardHeader className='pb-0 flex-1'>
-                  <CardTitle className='text-base'>Balance Details</CardTitle>
-                </CardHeader>
+              <div className='flex items-center justify-between gap-4 px-6 pb-3'>
+                <CardTitle className='text-base'>Balance Details</CardTitle>
                 <Button 
                   variant='ghost' 
-                  className='h-8 w-8 p-0'
+                  className='h-8 w-8 p-2'
                   asChild
                 >
                   <Link href="/contacts">
@@ -135,13 +133,11 @@ function Dashboard() {
             </Card>
 
             <Card>
-              <div className='flex items-center justify-between mb-2'>
-                <CardHeader className='pb-0 flex-1'>
-                  <CardTitle className='text-base'>Group Balance</CardTitle>
-                </CardHeader>
+              <div className='flex items-center justify-between gap-4 px-6 pb-3'>
+                <CardTitle className='text-base'>Group Balance</CardTitle>
                 <Button 
                   variant='ghost' 
-                  className='h-8 w-8 p-0'
+                  className='h-8 w-8 p-2'
                   asChild
                 >
                   <Link href="/contacts">

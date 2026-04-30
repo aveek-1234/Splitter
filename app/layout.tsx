@@ -33,8 +33,10 @@ export default function RootLayout({
        <ClerkProvider>
           <ConvexClientProvider>
             <Header />
-            <main className="min-h-screen py-4 sm:py-6 md:py-8 px-4 sm:px-6 md:px-4">
-              {children}
+            <main className="min-h-screen pt-16">
+              <div className="mx-auto w-full max-w-400 px-4 sm:px-6 lg:px-8">
+                {children}
+              </div>
             </main>
           </ConvexClientProvider>
         </ClerkProvider>
