@@ -56,6 +56,16 @@ export default function SettlementPage() {
       return;
     }
 
+    const userBalance = data.balanceDetails.find(
+      (b) => b.userId != data.otheruserDetails?._id
+    );
+    const maxAmount = userBalance ? Math.abs(userBalance.netBalance) : 0;
+
+    if (amount > maxAmount) {
+      toast.error(`Amount cannot exceed ₹${maxAmount.toFixed(2)}`);
+      return;
+    }
+
     try {
       await createSettlement({
         amount,
@@ -73,11 +83,26 @@ export default function SettlementPage() {
   const handleGroupSettlement = async () => {
     if (!data.group || !currentUser) return;
 
+    // Validate all amounts before processing
+    for (const userId of selectedUsers) {
+      const amount = parseFloat(groupAmounts[userId] || "0");
+      const member = data.balanceDetails.find((b) => b.userId === userId);
+
+      if (isNaN(amount) || amount <= 0) {
+        toast.error(`Please enter a valid amount for ${member?.name}`);
+        return;
+      }
+
+      if (member && amount > member.netBalance) {
+        toast.error(
+          `Amount for ${member.name} cannot exceed ₹${member.netBalance.toFixed(2)}`
+        );
+        return;
+      }
+    }
+
     const settlements = Array.from(selectedUsers).map((userId) => {
       const amount = parseFloat(groupAmounts[userId] || "0");
-      if (isNaN(amount) || amount <= 0) {
-        throw new Error(`Invalid amount for user ${userId}`);
-      }
       return {
         amount,
         paidByUserId: currentUser._id,
@@ -107,6 +132,30 @@ export default function SettlementPage() {
       newSelected.add(userId);
     }
     setSelectedUsers(newSelected);
+  };
+
+  const isUserAmountValid = (): boolean => {
+    const amount = parseFloat(userAmount);
+    if (isNaN(amount) || amount <= 0) return false;
+
+    const userBalance = data.balanceDetails.find(
+      (b) => b.userId != data.otheruserDetails?._id
+    );
+    const maxAmount = userBalance ? Math.abs(userBalance.netBalance) : 0;
+    return amount <= maxAmount;
+  };
+
+  const isGroupAmountValid = (): boolean => {
+    if (selectedUsers.size === 0) return false;
+
+    for (const userId of selectedUsers) {
+      const amount = parseFloat(groupAmounts[userId] || "0");
+      if (isNaN(amount) || amount <= 0) return false;
+
+      const member = data.balanceDetails.find((b) => b.userId === userId);
+      if (member && amount > member.netBalance) return false;
+    }
+    return true;
   };
 
   if (data.type === "user") {
@@ -143,10 +192,15 @@ export default function SettlementPage() {
                     onChange={(e) => setUserAmount(e.target.value)}
                     placeholder="Enter amount"
                   />
+                  {userAmount && !isUserAmountValid() && (
+                    <p className="text-red-500 text-sm mt-2">
+                      Amount cannot exceed ₹{Math.abs(userBalance?.netBalance || 0).toFixed(2)}
+                    </p>
+                  )}
                 </div>
                 <Button
                   onClick={handleUserSettlement}
-                  disabled={settling || !userAmount}
+                  disabled={settling || (!!userAmount && !isUserAmountValid())}
                 >
                   {settling ? "Settling..." : "Settle"}
                 </Button>
@@ -174,48 +228,57 @@ export default function SettlementPage() {
           <CardContent>
             {membersOwing.length > 0 ? (
               <div className="space-y-4">
-                {membersOwing.map((member) => (
-                  <div key={member.userId} className="flex items-center space-x-4">
-                    <Checkbox
-                      checked={selectedUsers.has(member.userId)}
-                      onCheckedChange={() => toggleUserSelection(member.userId)}
-                    />
-                    <Avatar>
-                      <AvatarImage src={member.imageUrl || ""} />
-                      <AvatarFallback>
-                        {member.name?.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <p>{member.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        Owes you: ₹{member.netBalance.toFixed(2)}
-                      </p>
-                    </div>
-                    {selectedUsers.has(member.userId) && (
-                      <div>
-                        <Label htmlFor={`amount-${member.userId}`}>
-                          Amount received
-                        </Label>
-                        <Input
-                          id={`amount-${member.userId}`}
-                          type="number"
-                          value={groupAmounts[member.userId] || ""}
-                          onChange={(e) =>
-                            setGroupAmounts((prev) => ({
-                              ...prev,
-                              [member.userId]: e.target.value,
-                            }))
-                          }
-                          placeholder="Enter amount"
-                        />
+                {membersOwing.map((member) => {
+                  const memberAmount = parseFloat(groupAmounts[member.userId] || "0");
+                  const isAmountExceeded = groupAmounts[member.userId] && memberAmount > member.netBalance;
+                  return (
+                    <div key={member.userId} className="flex items-center space-x-4">
+                      <Checkbox
+                        checked={selectedUsers.has(member.userId)}
+                        onCheckedChange={() => toggleUserSelection(member.userId)}
+                      />
+                      <Avatar>
+                        <AvatarImage src={member.imageUrl || ""} />
+                        <AvatarFallback>
+                          {member.name?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <p>{member.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Owes you: ₹{member.netBalance.toFixed(2)}
+                        </p>
                       </div>
-                    )}
-                  </div>
-                ))}
+                      {selectedUsers.has(member.userId) && (
+                        <div>
+                          <Label htmlFor={`amount-${member.userId}`}>
+                            Amount received
+                          </Label>
+                          <Input
+                            id={`amount-${member.userId}`}
+                            type="number"
+                            value={groupAmounts[member.userId] || ""}
+                            onChange={(e) =>
+                              setGroupAmounts((prev) => ({
+                                ...prev,
+                                [member.userId]: e.target.value,
+                              }))
+                            }
+                            placeholder="Enter amount"
+                          />
+                          {isAmountExceeded && (
+                            <p className="text-red-500 text-sm mt-1">
+                              Cannot exceed ₹{member.netBalance.toFixed(2)}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
                 <Button
                   onClick={handleGroupSettlement}
-                  disabled={settling || selectedUsers.size === 0}
+                  disabled={settling || !isGroupAmountValid()}
                 >
                   {settling ? "Settling..." : "Settle Selected"}
                 </Button>

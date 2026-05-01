@@ -24,7 +24,7 @@ export const getUserBalances = query({
       (exp) =>
         !exp.groupId &&
         (exp.paidByUserId === user._id ||
-          exp.splits.some((split) => split.userId === user._id))
+          exp.splits.some((split) => split.userId === user._id)),
     );
     let userOwe: number = 0;
     let userIsOwed: number = 0;
@@ -48,7 +48,7 @@ export const getUserBalances = query({
       } else {
         // User owes money
         const userSplit = expense.splits.find(
-          (split) => split.userId === user._id
+          (split) => split.userId === user._id,
         );
         if (userSplit && !userSplit.paid) {
           userOwe += userSplit.amount;
@@ -64,7 +64,7 @@ export const getUserBalances = query({
       (settlement) =>
         !settlement.groupId &&
         (settlement.paidByUserId === user._id ||
-          settlement.receivedByUserId === user._id)
+          settlement.receivedByUserId === user._id),
     );
 
     for (const settlement of settlements) {
@@ -87,7 +87,7 @@ export const getUserBalances = query({
     const userIsOwedList: UserBalanceSummary[] = [];
 
     for (const [userId, balance] of Object.entries(
-      balanceofTheUserWithOthers
+      balanceofTheUserWithOthers,
     ) as [Id<"users">, { userOwe: number; userIsOwed: number }][]) {
       const netBalance: number = balance.userOwe - balance.userIsOwed;
       if (netBalance < 0) continue;
@@ -105,9 +105,10 @@ export const getUserBalances = query({
         userIsOwedList.push(userBase);
       }
     }
+
     return {
-      userOwe,
-      userIsOwed,
+      userOwe: userOwe > 0 ? userOwe : 0,
+      userIsOwed: userIsOwed > 0 ? userIsOwed : 0,
       owingDetails: { userOwe: userOwesList, userIsOwed: userIsOwedList },
     };
   },
@@ -130,7 +131,7 @@ export const getTotalSpent = query({
     const filteredExpenses = userExpenses.filter(
       (exp) =>
         exp.paidByUserId === user._id ||
-        exp.splits.some((split) => split.userId === user._id)
+        exp.splits.some((split) => split.userId === user._id),
     );
 
     for (const expense of filteredExpenses) {
@@ -151,7 +152,7 @@ export const getGroupExpenses = query({
     const user: User = await ctx.runQuery(api.users.getCurrentUser);
     const allGroups: Doc<"groups">[] = await ctx.db.query("groups").collect();
     const userGroups: Doc<"groups">[] = allGroups.filter((group) =>
-      group.members.some((member) => member.userId === user._id)
+      group.members.some((member) => member.userId === user._id),
     );
 
     const groupDetailsWithExpenses: GroupWithBalance[] = await Promise.all(
@@ -170,7 +171,7 @@ export const getGroupExpenses = query({
             });
           } else {
             const userSplit = expense.splits.find(
-              (split) => split.userId === user._id
+              (split) => split.userId === user._id,
             );
             if (userSplit && !userSplit.paid) {
               balance -= userSplit.amount;
@@ -184,7 +185,7 @@ export const getGroupExpenses = query({
         const settlementsRegardingUser = settlements.filter(
           (settlement) =>
             settlement.paidByUserId === user._id ||
-            settlement.receivedByUserId === user._id
+            settlement.receivedByUserId === user._id,
         );
         for (const settlement of settlementsRegardingUser) {
           if (settlement.paidByUserId === user._id) {
@@ -194,7 +195,7 @@ export const getGroupExpenses = query({
           }
         }
         return { ...group, id: group._id, balance } as GroupWithBalance;
-      })
+      }),
     );
     return groupDetailsWithExpenses;
   },
