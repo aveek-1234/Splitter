@@ -1,104 +1,97 @@
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 
-const JWKS = createRemoteJWKSet(
-  new URL("https://clerk.splitterhub.cloud/.well-known/jwks.json")
-);
+const JWKS = createRemoteJWKSet(new URL('https://clerk.splitterhub.cloud/.well-known/jwks.json'));
 
 export default {
-  async fetch(request: Request): Promise<Response> {
-    const url = new URL(request.url);
-    const path = url.pathname.toLowerCase();
-    const ip = request.headers.get("cf-connecting-ip") || "unknown";
+	async fetch(request: Request): Promise<Response> {
+		const url = new URL(request.url);
+		const path = url.pathname.toLowerCase();
+		const ip = request.headers.get('cf-connecting-ip') || 'unknown';
 
-    function isStaticAsset(path: string) {
-    return (
-      path.startsWith("/_next") ||
-      path.startsWith("/static") ||
-      path.startsWith("/images") ||
-      /\.(css|js|png|jpg|jpeg|svg|ico|woff|woff2)$/.test(path)
-    );
-    }
+		function isStaticAsset(path: string) {
+			return (
+				path.startsWith('/_next') ||
+				path.startsWith('/static') ||
+				path.startsWith('/images') ||
+				/\.(css|js|png|jpg|jpeg|svg|ico|woff|woff2|webp|avif|gif)$/.test(path)
+			);
+		}
 
-  if (isStaticAsset(path)) {
-    return fetch(request);
-  }
+		if (isStaticAsset(path)) {
+			const cleanHeaders = new Headers(request.headers);
+			cleanHeaders.delete('cookie');
+			cleanHeaders.delete('authorization');
+			const assetRequest = new Request(request, {
+				headers: cleanHeaders,
+			});
 
-    // -------------------------
-    // 🚨 Bot / attack detection
-    // -------------------------
-    const suspiciousPatterns = [
-      "/wp-admin",
-      "/wp-login",
-      "/xmlrpc.php",
-      ".env",
-      ".git",
-      "setup-config.php",
-    ];
+			return fetch(assetRequest, {
+				cf: {
+					cacheEverything: true,
+					cacheTtl: 2592000, // 1 month
+				},
+			});
+		}
 
-    if (suspiciousPatterns.some(p => path.includes(p))) {
-      console.log(`🚨 Blocked suspicious request from ${ip}: ${path}`);
-      return new Response("Blocked", { status: 403 });
-    }
+		// -------------------------
+		// 🚨 Bot / attack detection
+		// -------------------------
+		const suspiciousPatterns = ['/wp-admin', '/wp-login', '/xmlrpc.php', '.env', '.git', 'setup-config.php'];
 
-    // -------------------------
-    // 🍪 Extract Clerk session
-    // -------------------------
-    const cookieHeader = request.headers.get("cookie") || "";
+		if (suspiciousPatterns.some((p) => path.includes(p))) {
+			console.log(`🚨 Blocked suspicious request from ${ip}: ${path}`);
+			return new Response('Blocked', { status: 403 });
+		}
 
-    const token = cookieHeader
-      .split(";")
-      .map(c => c.trim())
-      .find(c => c.startsWith("__session="))
-      ?.split("=")[1];
+		// -------------------------
+		// 🍪 Extract Clerk session
+		// -------------------------
+		const cookieHeader = request.headers.get('cookie') || '';
 
-    // -------------------------
-    // 🌍 Public routes
-    // -------------------------
-    const publicRoutes = [
-      "/",
-      "/sign-in",
-      "/sign-up",
-    ];
+		const token = cookieHeader
+			.split(';')
+			.map((c) => c.trim())
+			.find((c) => c.startsWith('__session='))
+			?.split('=')[1];
 
-    const isPublic = publicRoutes.some(route =>
-      path === route || path.startsWith(route + "/")
-    );
+		// -------------------------
+		// 🌍 Public routes
+		// -------------------------
+		const publicRoutes = ['/', '/sign-in', '/sign-up'];
 
-    // -------------------------
-    // 🔐 Protect everything else
-    // -------------------------
-    if (!isPublic) {
-      if (!token) {
-        return Response.redirect(
-          new URL("/sign-in", request.url).toString()
-        );
-      }
+		const isPublic = publicRoutes.some((route) => path === route || path.startsWith(route + '/'));
 
-      try {
-        const { payload } = await jwtVerify(token, JWKS, {
-          issuer: "https://clerk.splitterhub.cloud",
-        });
+		// -------------------------
+		// 🔐 Protect everything else
+		// -------------------------
+		if (!isPublic) {
+			if (!token) {
+				return Response.redirect(new URL('/sign-in', request.url).toString());
+			}
 
-        // ✅ Properly clone request with new headers
-        const newHeaders = new Headers(request.headers);
-        newHeaders.set("x-user-id", payload.sub as string);
+			try {
+				const { payload } = await jwtVerify(token, JWKS, {
+					issuer: 'https://clerk.splitterhub.cloud',
+				});
 
-        const newRequest = new Request(request, {
-          headers: newHeaders,
-        });
+				// ✅ Properly clone request with new headers
+				const newHeaders = new Headers(request.headers);
+				newHeaders.set('x-user-id', payload.sub as string);
 
-        return fetch(newRequest);
-      } catch (err) {
-        console.log(`❌ Invalid session from ${ip}`);
-        return Response.redirect(
-          new URL("/sign-in", request.url).toString()
-        );
-      }
-    }
+				const newRequest = new Request(request, {
+					headers: newHeaders,
+				});
 
-    // -------------------------
-    // 🚀 Public → pass through
-    // -------------------------
-    return fetch(request);
-  },
+				return fetch(newRequest);
+			} catch (err) {
+				console.log(`❌ Invalid session from ${ip}`);
+				return Response.redirect(new URL('/sign-in', request.url).toString());
+			}
+		}
+
+		// -------------------------
+		// 🚀 Public → pass through
+		// -------------------------
+		return fetch(request);
+	},
 };
