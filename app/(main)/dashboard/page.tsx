@@ -18,6 +18,7 @@ import BalanceDetails from "./Components/balance-details";
 import GroupList from "./Components/group-list";
 
 function Dashboard() {
+  let netGroupBalance = 0;
   const { data: userBalances, loading: userBalancesLoading } =
     useFetchQuery<GetUserBalancesResult>(api.dashboard.getUserBalances);
   const { data: totalSpent, loading: totalSpentLoading } =
@@ -26,6 +27,27 @@ function Dashboard() {
     useFetchQuery<GroupWithBalance[]>(api.dashboard.getGroupExpenses);
 
   const isLoading= userBalancesLoading || totalSpentLoading || groupExpensesLoading;
+
+  const calculateNetGroupBalance = (groupExpenses: GroupWithBalance[] | undefined) => {
+    if (!groupExpenses) return 0;
+    return groupExpenses.reduce((sum, group) => sum + group.balance, 0);
+  };
+
+  const totalGroupOwed = groupExpenses?.reduce(
+    (sum, group) => sum + (group.balance > 0 ? group.balance : 0),
+    0,
+  ) ?? 0;
+  const totalGroupOwe = groupExpenses?.reduce(
+    (sum, group) => sum + (group.balance < 0 ? Math.abs(group.balance) : 0),
+    0,
+  ) ?? 0;
+  const groupOwedCount = groupExpenses?.filter((group) => group.balance > 0).length ?? 0;
+  const groupOweCount = groupExpenses?.filter((group) => group.balance < 0).length ?? 0;
+
+  netGroupBalance = calculateNetGroupBalance(groupExpenses);
+  const individualNetBalance =
+    (userBalances?.userIsOwed ?? 0) - (userBalances?.userOwe ?? 0);
+  const totalNetBalance = individualNetBalance + netGroupBalance;
 
   return (
     <div>
@@ -37,9 +59,9 @@ function Dashboard() {
       <>
         <div className='flex items-center justify-between'>
           <h1 className="text-2xl font-bold">Dashboard</h1>
-          <Button>
-            <Link href="/expenses/new">
-              <PlusCircle className='mr-2 h-4 w-4'/>
+          <Button asChild>
+            <Link href="/expenses/new" className="inline-flex items-center gap-2">
+              <PlusCircle className='h-4 w-4'/>
               Add Expense
             </Link>
           </Button>
@@ -53,19 +75,24 @@ function Dashboard() {
             </CardHeader>
             <CardContent>
               {userBalances != null ? (
-                userBalances.userIsOwed - userBalances.userOwe > 0 ? (
+                totalNetBalance > 0 ? (
                   <>
                     <p className="text-3xl font-bold text-green-600">
-                      ₹{(userBalances.userIsOwed - userBalances.userOwe).toFixed(2)}
+                      ₹{totalNetBalance.toFixed(2)}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">You are owed</p>
                   </>
-                ) : (
+                ) : totalNetBalance < 0 ? (
                   <>
                     <p className="text-3xl font-bold text-red-600">
-                      ₹{(userBalances.userOwe - userBalances.userIsOwed).toFixed(2)}
+                      ₹{Math.abs(totalNetBalance).toFixed(2)}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">You owe</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-3xl font-bold text-gray-500">₹0.00</p>
+                    <p className="text-xs text-muted-foreground mt-1">Balanced</p>
                   </>
                 )
               ) : (
@@ -85,10 +112,15 @@ function Dashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-green-600">
-                ₹{userBalances?.userIsOwed?.toFixed(2) ?? "0.00"}
+                ₹{((userBalances?.userIsOwed ?? 0) + totalGroupOwed).toFixed(2)}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                from {userBalances?.owingDetails?.userIsOwed?.length ?? 0} people
+                {(userBalances?.owingDetails?.userIsOwed?.length) && (userBalances?.owingDetails?.userIsOwed?.length  > 0 && (
+                  <>from {userBalances?.owingDetails.userIsOwed.length} people</>
+                ))}
+                {groupOwedCount > 0 && (
+                  <>{userBalances?.owingDetails?.userIsOwed?.length ? " and " : "from "}{groupOwedCount} groups</>
+                )}
               </p>
             </CardContent>
           </Card>
@@ -101,10 +133,15 @@ function Dashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold text-red-600">
-                ₹{userBalances?.userOwe?.toFixed(2) ?? "0.00"}
+                ₹{((userBalances?.userOwe ?? 0) + totalGroupOwe).toFixed(2)}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                to {userBalances?.owingDetails?.userOwe?.length ?? 0} people
+                {(userBalances?.owingDetails?.userOwe?.length) && (userBalances?.owingDetails?.userOwe?.length > 0 && (
+                  <>to {userBalances?.owingDetails.userOwe.length} people</>
+                ))}
+                {groupOweCount > 0 && (
+                  <>{userBalances?.owingDetails?.userOwe?.length ? " and " : "to "}{groupOweCount} groups</>
+                )}
               </p>
             </CardContent>
           </Card>
@@ -115,13 +152,11 @@ function Dashboard() {
           </div>
           <div className='md:col-span-1 space-y-4'>
             <Card>
-              <div className='flex items-center justify-between mb-2'>
-                <CardHeader className='pb-0 flex-1'>
-                  <CardTitle className='text-base'>Balance Details</CardTitle>
-                </CardHeader>
+              <div className='flex items-center justify-between gap-4 px-6 pb-3'>
+                <CardTitle className='text-base'>Balance Details</CardTitle>
                 <Button 
                   variant='ghost' 
-                  className='h-8 w-8 p-0'
+                  className='h-8 w-8 p-2'
                   asChild
                 >
                   <Link href="/contacts">
@@ -135,13 +170,11 @@ function Dashboard() {
             </Card>
 
             <Card>
-              <div className='flex items-center justify-between mb-2'>
-                <CardHeader className='pb-0 flex-1'>
-                  <CardTitle className='text-base'>Group Balance</CardTitle>
-                </CardHeader>
+              <div className='flex items-center justify-between gap-4 px-6 pb-3'>
+                <CardTitle className='text-base'>Group Balance</CardTitle>
                 <Button 
                   variant='ghost' 
-                  className='h-8 w-8 p-0'
+                  className='h-8 w-8 p-2'
                   asChild
                 >
                   <Link href="/contacts">

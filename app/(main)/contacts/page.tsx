@@ -43,9 +43,9 @@ if(Array.isArray(data)){
     }
   }, [searchParams]);
   return (
-    <div className='container mx-auto py-6 px-6'>
+    <div>
       {loading && 
-      <div className='container mx-auto py-12'>
+      <div className='py-12'>
         <BarLoader width={"100%"} color='#0000FF' />
       </div>}
       <div className='flex items-center justify-between mb-6'>

@@ -16,7 +16,7 @@ function Header() {
   const path= usePathname();
   return (
     <header className='fixed top-0 w-full border-b bg-white/10 backdrop-blur z-10 supports-backdrop-filter:bg-white/20'>
-      <nav className='container mx-auto px-4 h-16 flex items-center justify-between'>
+      <nav className='container mx-auto px-4 h-16 flex items-center justify-between relative'>
         <Link href="/" className='flex items-center gap-2'>
             <Image
               src={splitterLogo}
@@ -71,8 +71,12 @@ function Header() {
             </SignUpButton>
           </Unauthenticated>
         </div>
+        {isLoading && (
+          <div className='absolute inset-x-0 bottom-0'>
+            <BarLoader width={"100%"} color='green'/>
+          </div>
+        )}
       </nav>
-      {isLoading && <BarLoader width={"100%"} color='green'/>}
     </header>
   );
 }

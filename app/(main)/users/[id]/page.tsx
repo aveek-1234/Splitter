@@ -31,7 +31,7 @@ const Userpage = () => {
   
 
   return (
-    <div className="container">
+    <div>
       <div className="mb-4">
         <button
           type="button"
