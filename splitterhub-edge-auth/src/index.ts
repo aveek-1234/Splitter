@@ -17,20 +17,45 @@ export default {
 			);
 		}
 
+		// if (isStaticAsset(path)) {
+		// 	const cleanHeaders = new Headers(request.headers);
+		// 	cleanHeaders.delete('cookie');
+		// 	cleanHeaders.delete('authorization');
+		// 	const assetRequest = new Request(request, {
+		// 		headers: cleanHeaders,
+		// 	});
+
+		// 	return fetch(assetRequest, {
+		// 		cf: {
+		// 			cacheEverything: true,
+		// 			cacheTtl: 2592000, // 1 month
+		// 		},
+		// 	});
+		// }
+
 		if (isStaticAsset(path)) {
 			const cleanHeaders = new Headers(request.headers);
+
 			cleanHeaders.delete('cookie');
 			cleanHeaders.delete('authorization');
+
 			const assetRequest = new Request(request, {
 				headers: cleanHeaders,
 			});
 
-			return fetch(assetRequest, {
+			const response = await fetch(assetRequest, {
 				cf: {
 					cacheEverything: true,
-					cacheTtl: 2592000, // 1 month
+					cacheTtl: 2592000,
+					cacheKey: request.url,
 				},
 			});
+
+			const newResponse = new Response(response.body, response);
+
+			newResponse.headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+
+			return newResponse;
 		}
 
 		// -------------------------
