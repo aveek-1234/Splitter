@@ -11,6 +11,7 @@
 import type * as contacts from "../contacts.js";
 import type * as createExpense from "../createExpense.js";
 import type * as dashboard from "../dashboard.js";
+import type * as export_ from "../export.js";
 import type * as groupExpenses from "../groupExpenses.js";
 import type * as individualExpenses from "../individualExpenses.js";
 import type * as inngest from "../inngest.js";
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   contacts: typeof contacts;
   createExpense: typeof createExpense;
   dashboard: typeof dashboard;
+  export: typeof export_;
   groupExpenses: typeof groupExpenses;
   individualExpenses: typeof individualExpenses;
   inngest: typeof inngest;

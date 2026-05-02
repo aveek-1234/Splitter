@@ -10,6 +10,8 @@ import { api } from '@/convex/_generated/api';
 import { useFetchQuery } from '@/hooks/useFetchQuery';
 import { BarLoader } from 'react-spinners';
 import { format } from 'date-fns/format';
+import { useMutateQuery } from '@/hooks/useMutateQuery';
+import { useAction } from 'convex/react';
 
 export default function TransactionPage() {
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -45,6 +47,12 @@ export default function TransactionPage() {
     from: undefined,
     to: undefined,
   });
+
+  const triggerExport = useAction(
+  api.export.triggerExport
+);
+
+
 
   if (loading) {
     return (
@@ -129,6 +137,10 @@ const allTransactions = [
             showFilterButton
             onFilter={(from, to) => {
               setDateRange({ from, to });
+            }}
+            handleExport={async(from, to) => {
+              setDateRange({ from, to });
+              await triggerExport({ transactions: allTransactions });
             }}
           />
         </CardHeader>

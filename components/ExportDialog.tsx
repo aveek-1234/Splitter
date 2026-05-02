@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Download } from 'lucide-react';
+import { api } from '@/convex/_generated/api';
+import { useMutateQuery } from '@/hooks/useMutateQuery';
 
 interface ExportDialogProps {
   isOpen: boolean;
@@ -10,9 +12,10 @@ interface ExportDialogProps {
   title?: string;
   showFilterButton?: boolean;
   onFilter?: (from: Date, to: Date) => void;
+  handleExport?: (from: Date, to: Date) => void;
 }
 
-export function ExportDialog({ isOpen, onOpenChange, title, showFilterButton, onFilter }: ExportDialogProps) {
+export function ExportDialog({ isOpen, onOpenChange, title, showFilterButton, onFilter,handleExport }: ExportDialogProps) {
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
     to: Date | undefined;
@@ -21,15 +24,6 @@ export function ExportDialog({ isOpen, onOpenChange, title, showFilterButton, on
     to: undefined,
   });
 
-  const handleExport = () => {
-    if (!dateRange.from || !dateRange.to) {
-      return;
-    }
-    // TODO: Implement actual export logic here
-    console.log('Exporting data from', dateRange.from, 'to', dateRange.to);
-    onOpenChange(false);
-    setDateRange({ from: undefined, to: undefined });
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -80,7 +74,7 @@ export function ExportDialog({ isOpen, onOpenChange, title, showFilterButton, on
               </Button>
             )}
             <Button
-              onClick={handleExport}
+              onClick={()=>handleExport?.(dateRange.from!, dateRange.to!)}
               disabled={!dateRange.from || !dateRange.to}
             >
               Export
