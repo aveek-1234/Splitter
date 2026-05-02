@@ -82,7 +82,7 @@ export default {
 		// -------------------------
 		// 🌍 Public routes
 		// -------------------------
-		const publicRoutes = ['/', '/sign-in', '/sign-up'];
+		const publicRoutes = ['/', '/sign-in', '/sign-up', '/api/inngest'];
 
 		const isPublic = publicRoutes.some((route) => path === route || path.startsWith(route + '/'));
 
