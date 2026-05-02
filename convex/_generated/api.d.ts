@@ -17,6 +17,7 @@ import type * as inngest from "../inngest.js";
 import type * as seed from "../seed.js";
 import type * as sendEmail from "../sendEmail.js";
 import type * as settlement from "../settlement.js";
+import type * as userTransactions from "../userTransactions.js";
 import type * as users from "../users.js";
 
 import type {
@@ -35,6 +36,7 @@ declare const fullApi: ApiFromModules<{
   seed: typeof seed;
   sendEmail: typeof sendEmail;
   settlement: typeof settlement;
+  userTransactions: typeof userTransactions;
   users: typeof users;
 }>;
 

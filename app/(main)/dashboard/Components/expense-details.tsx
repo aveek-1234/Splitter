@@ -14,6 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 function ExpenseDetails({ expenses }: { expenses: GetTotalSpentResult | undefined }) {
+
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
   const prepareData= ()=>{

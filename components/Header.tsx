@@ -59,6 +59,20 @@ function Header() {
                 <LayoutDashboard className="h-2 w-5" />
               </Button>
             </Link>
+            <Link href="/transaction">
+              <Button 
+                variant={"outline"}
+                className="hidden md:inline-flex items-center gap-2 hover:text-blue-600"
+              >
+                Your Transactions
+              </Button>
+              <Button 
+                variant={"outline"}
+                className="md:hidden w-13 h-10 p-0"
+              >
+                T
+              </Button>
+            </Link>
             <UserButton />
           </Authenticated>
           <Unauthenticated>           
