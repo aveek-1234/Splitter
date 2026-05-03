@@ -5,9 +5,9 @@ import { inngest } from "./client";
 import { api } from "@/convex/_generated/api";
 import PDFDocument from "pdfkit";
 
-const convex = new ConvexHttpClient(
-  process.env.NEXT_PUBLIC_CONVEX_URL!,
-);
+import path from "path";
+
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export const exportTransactions = inngest.createFunction(
   {
@@ -28,9 +28,7 @@ export const exportTransactions = inngest.createFunction(
       // GENERATE PDF
       // ------------------------
 
-      const pdfBase64 = await generateTransactionsPdf(
-        transactions,
-      );
+      const pdfBase64 = await generateTransactionsPdf(transactions);
 
       console.log("PDF generated");
 
@@ -38,14 +36,12 @@ export const exportTransactions = inngest.createFunction(
       // SEND EMAIL
       // ------------------------
 
-      const result = await convex.action(
-        api.sendEmail.sendEmail,
-        {
-          to: email,
+      const result = await convex.action(api.sendEmail.sendEmail, {
+        to: email,
 
-          subject: "Your Transaction Export",
+        subject: "Your Transaction Export",
 
-          html: `
+        html: `
             <div>
               <h1>Transaction Export</h1>
 
@@ -55,16 +51,15 @@ export const exportTransactions = inngest.createFunction(
             </div>
           `,
 
-          text: "Your transaction export is attached.",
+        text: "Your transaction export is attached.",
 
-          attachments: [
-            {
-              filename: "transactions.pdf",
-              content: pdfBase64,
-            },
-          ],
-        },
-      );
+        attachments: [
+          {
+            filename: "transactions.pdf",
+            content: pdfBase64,
+          },
+        ],
+      });
 
       console.log(result);
 
@@ -81,12 +76,7 @@ export const exportTransactions = inngest.createFunction(
   },
 );
 
-
-
-
- async function generateTransactionsPdf(
-  transactions: any[],
-) {
+async function generateTransactionsPdf(transactions: any[]) {
   return new Promise<string>((resolve, reject) => {
     const doc = new PDFDocument({
       margin: 40,
@@ -94,6 +84,8 @@ export const exportTransactions = inngest.createFunction(
     });
 
     const buffers: Buffer[] = [];
+
+    doc.font(path.join(process.cwd(), "public/fonts/Roboto-Regular.ttf"));
 
     doc.on("data", (chunk) => {
       buffers.push(chunk);
@@ -111,17 +103,13 @@ export const exportTransactions = inngest.createFunction(
     // HEADER
     // ------------------------
 
-    doc
-      .fontSize(24)
-      .text("SplitterHub Transaction Export", {
-        align: "center",
-      });
+    doc.fontSize(24).text("SplitterHub Transaction Export", {
+      align: "center",
+    });
 
     doc.moveDown();
 
-    doc
-      .fontSize(12)
-      .text(`Generated At: ${new Date().toLocaleString()}`);
+    doc.fontSize(12).text(`Generated At: ${new Date().toLocaleString()}`);
 
     doc.moveDown(2);
 
@@ -130,9 +118,7 @@ export const exportTransactions = inngest.createFunction(
     // ------------------------
 
     transactions.forEach((transaction, index) => {
-      doc
-        .fontSize(16)
-        .text(`${index + 1}. ${transaction.displayText}`);
+      doc.fontSize(16).text(`${index + 1}. ${transaction.displayText}`);
 
       doc.moveDown(0.5);
 
@@ -144,9 +130,7 @@ export const exportTransactions = inngest.createFunction(
 
       doc.text(`Name: ${transaction.name}`);
 
-      doc.text(
-        `Date: ${new Date(transaction.date).toLocaleDateString()}`,
-      );
+      doc.text(`Date: ${new Date(transaction.date).toLocaleDateString()}`);
 
       if (transaction.description) {
         doc.text(`Description: ${transaction.description}`);
@@ -158,9 +142,7 @@ export const exportTransactions = inngest.createFunction(
 
       doc.moveDown();
 
-      doc.moveTo(40, doc.y)
-        .lineTo(550, doc.y)
-        .stroke();
+      doc.moveTo(40, doc.y).lineTo(550, doc.y).stroke();
 
       doc.moveDown();
     });
