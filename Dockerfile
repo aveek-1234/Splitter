@@ -17,7 +17,7 @@ ENV npm_config_arch=x64
 
 # Install dependencies
 RUN npm install && \
-    npm install lightningcss-linux-x64-gnu
+    npm install lightningcss-linux-x64-gnu @tailwindcss/oxide-linux-x64-gnu
 
 # Copy source code
 COPY . .
