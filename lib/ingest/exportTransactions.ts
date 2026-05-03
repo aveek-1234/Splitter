@@ -81,11 +81,10 @@ async function generateTransactionsPdf(transactions: any[]) {
     const doc = new PDFDocument({
       margin: 40,
       size: "A4",
+      font: path.join(process.cwd(), "public/fonts/Roboto-Regular.ttf"),
     });
 
     const buffers: Buffer[] = [];
-
-    doc.font(path.join(process.cwd(), "public/fonts/Roboto-Regular.ttf"));
 
     doc.on("data", (chunk) => {
       buffers.push(chunk);
