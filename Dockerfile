@@ -16,7 +16,8 @@ ENV npm_config_platform=linux
 ENV npm_config_arch=x64
 
 # Install dependencies
-RUN npm install
+RUN npm install && \
+    npm install lightningcss-linux-x64-gnu
 
 # Copy source code
 COPY . .
