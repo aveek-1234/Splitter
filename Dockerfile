@@ -12,6 +12,9 @@ ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 # Copy package files
 COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
 
+ENV npm_config_platform=linux
+ENV npm_config_arch=x64
+
 # Install dependencies
 RUN npm install
 
