@@ -12,6 +12,10 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 export const exportTransactions = inngest.createFunction(
   {
     id: "export-transactions",
+    debounce: {
+      key: "event.data.email",
+      period: "10s",
+    },
   },
 
   {
