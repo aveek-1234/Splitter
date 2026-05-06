@@ -58,6 +58,12 @@ export default {
 			return newResponse;
 		}
 
+		const isInngestRequest = request.headers.get('x-inngest-signature') || request.headers.get('x-inngest-sdk');
+
+		if (isInngestRequest) {
+			return fetch(request);
+		}
+
 		// -------------------------
 		// 🚨 Bot / attack detection
 		// -------------------------

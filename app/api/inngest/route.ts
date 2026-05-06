@@ -2,6 +2,7 @@ import { serve } from "inngest/next";
 import { inngest } from "@/lib/ingest/client";
 import { paymentReminders } from "@/lib/ingest/paymentReminders";
 import { spendingInsights } from "@/lib/ingest/spendingInsights";
+import { exportTransactions } from "@/lib/ingest/exportTransactions";
 
 // Create an API that serves zero functions
 export const { GET, POST, PUT } = serve({
@@ -10,5 +11,6 @@ export const { GET, POST, PUT } = serve({
     /* your functions will be passed here later! */
     paymentReminders,
     spendingInsights,
+    exportTransactions,
   ],
 });
