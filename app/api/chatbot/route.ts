@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const groq = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY!,
-  baseURL: "https://api.groq.com/openai/v1",
-});
+function getGroq() {
+  return new OpenAI({
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: "https://api.groq.com/openai/v1",
+  });
+}
 
 function getCurrentDateContext(date = new Date()) {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -27,7 +29,11 @@ function getCurrentDateContext(date = new Date()) {
   };
 }
 
-export function buildChatMessages(query: string, context: unknown, date = new Date()) {
+export function buildChatMessages(
+  query: string,
+  context: unknown,
+  date = new Date(),
+) {
   const currentDateContext = getCurrentDateContext(date);
 
   return [
@@ -43,6 +49,7 @@ export function buildChatMessages(query: string, context: unknown, date = new Da
 }
 
 export async function POST(request: Request) {
+  const groq = getGroq();
   try {
     const body = (await request.json()) as {
       query?: string;
