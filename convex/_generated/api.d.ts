@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as chatbot from "../chatbot.js";
 import type * as contacts from "../contacts.js";
 import type * as createExpense from "../createExpense.js";
 import type * as dashboard from "../dashboard.js";
@@ -28,6 +29,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  chatbot: typeof chatbot;
   contacts: typeof contacts;
   createExpense: typeof createExpense;
   dashboard: typeof dashboard;

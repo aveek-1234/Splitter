@@ -147,6 +147,7 @@ function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
   if(!currentUser) return null;
 
   const onSubmit = async (data: z.infer<typeof expenseSchema>) => {
+    console.log("Submitting expense form with data:", data);
     const total = parseFloat(data.amount) || 0;
     const splitsTotal = splits.reduce((sum, s) => sum + s.amount, 0);
     const tolerance = 0.01;
