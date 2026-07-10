@@ -1,5 +1,9 @@
 name: Deploy to VPS + Worker
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   push:
     branches:
@@ -35,21 +39,36 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build Docker image
-        run: |
-          docker build \
-            --build-arg NEXT_PUBLIC_CONVEX_URL=${{ secrets.NEXT_PUBLIC_CONVEX_URL }} \
-            --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }} \
-            -t myapp .
-
-      - name: Save Docker image
-        run: docker save myapp > myapp.tar
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
         with:
-          name: myapp-image
-          path: myapp.tar
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build and Push Docker Image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          build-args: |
+            NEXT_PUBLIC_CONVEX_URL=${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/splitter:latest
+            ghcr.io/${{ github.repository_owner }}/splitter:${{ github.sha }}
+
+      - name: Build Docker Image Only
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          build-args: |
+            NEXT_PUBLIC_CONVEX_URL=${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
   # -----------------------
   # 🚀 VPS DEPLOY
@@ -64,20 +83,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: myapp-image
-
-      - name: Copy image to VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "myapp.tar"
-          target: "/home/${{ secrets.VPS_USER }}/"
-
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -85,11 +90,13 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /home/${{ secrets.VPS_USER }}
-            docker load < myapp.tar
-            docker stop myapp || true
-            docker rm myapp || true
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            IMAGE="ghcr.io/${{ github.repository_owner }}/splitter:${{ github.sha }}"
+            docker pull "$IMAGE"
+            docker stop splitter || true
+            docker rm splitter || true
             docker run -d -p 3000:3000 \
+              --name splitter \
               -e CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }} \
               -e CLERK_JWT_ISSUER_DOMAIN=${{ secrets.CLERK_JWT_ISSUER_DOMAIN }} \
               -e RESEND_API_KEY=${{ secrets.RESEND_API_KEY }} \
@@ -98,7 +105,7 @@ jobs:
               -e GROQ_API_KEY=${{ secrets.GROQ_API_KEY }} \
               -e INNGEST_EVENT_KEY=${{ secrets.INNGEST_EVENT_KEY }} \
               -e INNGEST_SIGNING_KEY=${{ secrets.INNGEST_SIGNING_KEY }} \
-              --name myapp myapp
+              "$IMAGE"
 
   # -----------------------
   # 🌍 WORKER DEPLOY
