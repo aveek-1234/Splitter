@@ -9,7 +9,7 @@ import {BarLoader} from "react-spinners"
 import { usePathname } from 'next/navigation';
 import { Authenticated, Unauthenticated } from 'convex/react';
 import { Button } from './ui/button';
-import { LayoutDashboard } from 'lucide-react';
+import { LayoutDashboard, Sparkles } from 'lucide-react';
 
 function Header() {
   const { isLoading, isAuthenticated } = useStoreUser();
@@ -57,6 +57,21 @@ function Header() {
                 className="md:hidden w-13 h-10 p-0"
               >
                 <LayoutDashboard className="h-2 w-5" />
+              </Button>
+            </Link>
+            <Link href="/chatbot">
+              <Button
+                variant={"outline"}
+                className="hidden md:inline-flex items-center gap-2 hover:text-blue-600"
+              >
+                <Sparkles className="h-5 w-5" />
+                AI Chatbot
+              </Button>
+              <Button
+                variant={"outline"}
+                className="md:hidden w-13 h-10 p-0"
+              >
+                <Sparkles className="h-4 w-4" />
               </Button>
             </Link>
             <Link href="/transaction">

@@ -7,6 +7,7 @@ export function useFetchQuery<T>(query: Parameters<typeof useQuery>[0], args?: P
   error: string;
 } {
   const response = useQuery(query, args);
+  console.log("data",response)
 
   const [data, setData] = useState<T | undefined>(undefined);
   const [loading, setLoading] = useState(true);
