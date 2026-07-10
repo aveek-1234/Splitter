@@ -54,7 +54,7 @@ EXPOSE 3000
 ENV NODE_ENV=production
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:3000', (r) => {if (r.statusCode !== 200) process.exit(1)})"
+    CMD node -e "const http=require('http'); const req=http.get('http://localhost:3000/api/health', (res)=>{res.resume(); if (res.statusCode===200){ console.log('healthcheck ok'); process.exit(0);} process.exit(1);}); req.on('error', ()=>process.exit(1));"
 
 ENTRYPOINT ["dumb-init", "--"]
 
