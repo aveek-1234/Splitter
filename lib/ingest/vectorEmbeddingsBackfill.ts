@@ -3,10 +3,13 @@ import { inngest } from "./client";
 import { api } from "@/convex/_generated/api";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-const OLLAMA_BASE_URL =
-  process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
-const QDRANT_URL = (process.env.QDRANT_URL ?? "http://localhost:6333").replace(/\/$/, "");
-const QDRANT_COLLECTION = process.env.QDRANT_COLLECTION ?? "splitter_embeddings";
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
+const QDRANT_URL = (process.env.QDRANT_URL ?? "http://localhost:6333").replace(
+  /\/$/,
+  "",
+);
+const QDRANT_COLLECTION =
+  process.env.QDRANT_COLLECTION ?? "splitter_embeddings";
 const DEFAULT_BATCH_SIZE = Number(process.env.EMBEDDING_BATCH_SIZE ?? 20);
 const EMBEDDING_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "nomic-embed-text";
 const EMBEDDING_DIMENSIONS = 768;
@@ -39,18 +42,21 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 async function ensureQdrantCollection() {
-  const response = await fetch(`${QDRANT_URL}/collections/${QDRANT_COLLECTION}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      vectors: {
-        size: EMBEDDING_DIMENSIONS,
-        distance: "cosine",
+  const response = await fetch(
+    `${QDRANT_URL}/collections/${QDRANT_COLLECTION}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
       },
-    }),
-  });
+      body: JSON.stringify({
+        vectors: {
+          size: EMBEDDING_DIMENSIONS,
+          distance: "Cosine",
+        },
+      }),
+    },
+  );
 
   if (!response.ok) {
     const text = await response.text();
@@ -60,17 +66,22 @@ async function ensureQdrantCollection() {
   }
 }
 
-async function getOllamaEmbeddings(texts: string[]): Promise<EmbeddingBatchResult> {
-  const response = await fetch(`${OLLAMA_BASE_URL.replace(/\/$/, "")}/api/embed`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+async function getOllamaEmbeddings(
+  texts: string[],
+): Promise<EmbeddingBatchResult> {
+  const response = await fetch(
+    `${OLLAMA_BASE_URL.replace(/\/$/, "")}/api/embed`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: EMBEDDING_MODEL,
+        input: texts,
+      }),
     },
-    body: JSON.stringify({
-      model: EMBEDDING_MODEL,
-      input: texts,
-    }),
-  });
+  );
 
   if (!response.ok) {
     const text = await response.text();
@@ -156,7 +167,10 @@ export const vectorEmbeddingsBackfill = inngest.createFunction(
       const points: QdrantPoint[] = batch.map((doc, index) => {
         const embedding = embeddings[index];
 
-        if (!Array.isArray(embedding) || embedding.length !== EMBEDDING_DIMENSIONS) {
+        if (
+          !Array.isArray(embedding) ||
+          embedding.length !== EMBEDDING_DIMENSIONS
+        ) {
           throw new Error(
             `Invalid embedding received for ${doc.sourceTable}:${doc.sourceId}`,
           );
