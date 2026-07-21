@@ -44,6 +44,16 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 async function ensureQdrantCollection() {
+  const existingCollectionsResponse = await fetch(
+    `${QDRANT_URL}/collections/${QDRANT_COLLECTION}`,
+    {
+      method: "GET",
+    },
+  );
+  if (existingCollectionsResponse.ok) {
+    console.log("Collection already exists, skipping creation.");
+    return;
+  }
   const response = await fetch(
     `${QDRANT_URL}/collections/${QDRANT_COLLECTION}`,
     {
