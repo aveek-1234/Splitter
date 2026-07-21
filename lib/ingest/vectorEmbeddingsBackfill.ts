@@ -1,6 +1,7 @@
 import { ConvexHttpClient } from "convex/browser";
 import { inngest } from "./client";
 import { api } from "@/convex/_generated/api";
+import { v5 as uuidv5 } from "uuid";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
@@ -13,6 +14,7 @@ const QDRANT_COLLECTION =
 const DEFAULT_BATCH_SIZE = Number(process.env.EMBEDDING_BATCH_SIZE ?? 20);
 const EMBEDDING_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "nomic-embed-text";
 const EMBEDDING_DIMENSIONS = 768;
+const UUID_NAMESPACE = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
 
 type EmbeddableDocument = {
   sourceTable: "users" | "groups" | "expenses" | "settlements";
@@ -177,7 +179,7 @@ export const vectorEmbeddingsBackfill = inngest.createFunction(
         }
 
         return {
-          id: `${doc.sourceTable}:${doc.sourceId}`,
+          id: uuidv5(`${doc.sourceTable}:${doc.sourceId}`, UUID_NAMESPACE),
           vector: embedding,
           payload: {
             sourceTable: doc.sourceTable,
