@@ -1,5 +1,5 @@
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://localhost:11434";
-const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL;
+const OLLAMA_EMBED_MODEL = process.env.OLLAMA_EMBED_MODEL ?? "nomic-embed-text";
 
 if (!OLLAMA_BASE_URL) {
   throw new Error("Missing environment variable: OLLAMA_BASE_URL");
