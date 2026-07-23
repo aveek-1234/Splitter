@@ -10,7 +10,8 @@ export interface QdrantPoint<TPayload = Record<string, unknown>> {
 }
 
 const QDRANT_URL = process.env.QDRANT_URL;
-const QDRANT_COLLECTION = process.env.QDRANT_COLLECTION;
+const QDRANT_COLLECTION =
+  process.env.QDRANT_COLLECTION ?? "splitter_embeddings";
 
 if (!QDRANT_URL) {
   throw new Error("Missing environment variable: QDRANT_URL");
