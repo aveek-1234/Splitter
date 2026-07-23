@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
+import { useAction } from "convex/react";
 import { useFetchQuery } from "@/hooks/useFetchQuery";
 import { format } from "date-fns";
 import {
@@ -29,7 +30,8 @@ const quickPrompts = [
 
 export function ExpenseChatbot() {
   const { data: context, loading } = useFetchQuery<any>(api.chatbot.getExpenseChatContext);
-  console.log("ExpenseChatbot context:", context);
+  const askQuestion = useAction(api.chatbot.askQuestion);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -73,24 +75,14 @@ export function ExpenseChatbot() {
     setIsSending(true);
 
     try {
-      const response = await fetch("/api/chatbot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: trimmed,
-          context,
-        }),
-      });
-
-      const data = (await response.json()) as { answer?: string };
+        const result = await askQuestion({ question: trimmed });
 
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: data.answer || "I couldn't generate an answer for that question.",
+          content:
+            result.answer || "I couldn't generate an answer for that question.",
         },
       ]);
     } catch {

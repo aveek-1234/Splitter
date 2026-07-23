@@ -1,5 +1,7 @@
 import { api } from "./_generated/api";
-import { query, type QueryCtx } from "./_generated/server";
+import { action, query, type QueryCtx } from "./_generated/server";
+import { v } from "convex/values";
+import { askQuestion as askQuestionFromRag } from "../lib/ai/rag";
 
 type ChatExpense = {
   id: string;
@@ -106,5 +108,15 @@ export const getExpenseChatContext = query({
       expenses: formattedExpenses,
       settlements: userTransactions.settlements,
     };
+  },
+});
+
+export const askQuestion = action({
+  args: {
+    question: v.string(),
+  },
+  handler: async (_ctx, args) => {
+    const result = await askQuestionFromRag(args.question);
+    return result;
   },
 });
