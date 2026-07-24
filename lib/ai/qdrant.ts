@@ -9,7 +9,10 @@ export interface QdrantPoint<TPayload = Record<string, unknown>> {
   payload: TPayload;
 }
 
-const QDRANT_URL = process.env.QDRANT_URL;
+const QDRANT_URL = (process.env.QDRANT_URL ?? "http://localhost:6333").replace(
+  /\/$/,
+  "",
+);
 const QDRANT_COLLECTION =
   process.env.QDRANT_COLLECTION ?? "splitter_embeddings";
 
