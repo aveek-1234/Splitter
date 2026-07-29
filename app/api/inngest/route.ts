@@ -4,6 +4,8 @@ import { paymentReminders } from "@/lib/ingest/paymentReminders";
 import { spendingInsights } from "@/lib/ingest/spendingInsights";
 import { exportTransactions } from "@/lib/ingest/exportTransactions";
 import { vectorEmbeddingsBackfill } from "@/lib/ingest/vectorEmbeddingsBackfill";
+import { vectorEmbeddingsUpsert } from "@/lib/ingest/vectorEmbeddingsUpsert";
+import { vectorEmbeddingsDelete } from "@/lib/ingest/vectorEmbeddingsDelete";
 
 // Create an API that serves zero functions
 export const { GET, POST, PUT } = serve({
@@ -14,5 +16,7 @@ export const { GET, POST, PUT } = serve({
     spendingInsights,
     exportTransactions,
     vectorEmbeddingsBackfill,
+    vectorEmbeddingsUpsert,
+    vectorEmbeddingsDelete,
   ],
 });

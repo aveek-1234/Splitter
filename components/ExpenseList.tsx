@@ -9,6 +9,7 @@ import { format } from 'date-fns/format';
 import { Badge, Trash } from 'lucide-react';
 import { toast } from 'sonner';
 import { Id } from '@/convex/_generated/dataModel';
+import { queueEmbedding } from '@/lib/embeddings/queueEmbedding';
 
 type ExpenseDetailsProps = {
   expenses: Expense[];
@@ -64,7 +65,13 @@ function ExpenseList(
       return;
     }
     try {
-      await deleteExpense.mutate({expenseId:expense._id as Id<"expenses">})
+      const expenseId = expense._id as Id<"expenses">;
+      await deleteExpense.mutate({ expenseId });
+      void queueEmbedding({
+        action: "delete",
+        sourceTable: "expenses",
+        sourceId: expenseId,
+      });
     } catch (error) {
       toast.error("Failed to delete expense")
     }

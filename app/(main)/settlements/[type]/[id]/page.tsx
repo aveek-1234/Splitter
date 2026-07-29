@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { BarLoader } from "react-spinners";
 import type { User } from "@/lib/models";
 import { GetSettlementsResult } from "@/convex/settlement";
+import { queueEmbedding } from "@/lib/embeddings/queueEmbedding";
 
 
 export default function SettlementPage() {
@@ -67,11 +68,18 @@ export default function SettlementPage() {
     }
 
     try {
-      await createSettlement({
+      const settlementId = await createSettlement({
         amount,
         paidByUserId: currentUser._id,
         receivedByUserId: data.otheruserDetails._id,
       });
+      if (settlementId) {
+        void queueEmbedding({
+          action: "upsert",
+          sourceTable: "settlements",
+          sourceId: settlementId,
+        });
+      }
       toast.success("Settlement created successfully");
       setUserAmount("");
       // Optionally refetch data
@@ -112,9 +120,18 @@ export default function SettlementPage() {
     });
 
     try {
-      await Promise.all(
+      const results = await Promise.all(
         settlements.map((settlement) => createSettlement(settlement))
       );
+      for (const settlementId of results) {
+        if (settlementId) {
+          void queueEmbedding({
+            action: "upsert",
+            sourceTable: "settlements",
+            sourceId: settlementId,
+          });
+        }
+      }
       toast.success("Settlements created successfully");
       setGroupAmounts({});
       setSelectedUsers(new Set());

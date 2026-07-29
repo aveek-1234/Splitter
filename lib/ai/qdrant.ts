@@ -63,7 +63,7 @@ export async function ensureCollection(): Promise<void> {
         },
         body: JSON.stringify({
           vectors: {
-            size: 1536,
+            size: 768,
             distance: "Cosine",
           },
         }),
