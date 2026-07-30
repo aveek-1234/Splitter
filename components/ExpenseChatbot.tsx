@@ -4,8 +4,8 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
-import { useAction } from "convex/react";
 import { useFetchQuery } from "@/hooks/useFetchQuery";
+import { askChatQuestion } from "@/lib/chatbot/askQuestion";
 import { format } from "date-fns";
 import {
   ArrowDownRight,
@@ -19,6 +19,7 @@ import {
 type Message = {
   role: "user" | "assistant";
   content: string;
+  sources?: string[];
 };
 
 const quickPrompts = [
@@ -30,7 +31,6 @@ const quickPrompts = [
 
 export function ExpenseChatbot() {
   const { data: context, loading } = useFetchQuery<any>(api.chatbot.getExpenseChatContext);
-  const askQuestion = useAction(api.chatbot.askQuestion);
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -75,7 +75,12 @@ export function ExpenseChatbot() {
     setIsSending(true);
 
     try {
-        const result = await askQuestion({ question: trimmed });
+      const result = await askChatQuestion(trimmed);
+
+      const sourceLabels = result.sources
+        .map((source) => source.payload.text)
+        .filter((text): text is string => typeof text === "string" && text.length > 0)
+        .slice(0, 3);
 
       setMessages((prev) => [
         ...prev,
@@ -83,6 +88,7 @@ export function ExpenseChatbot() {
           role: "assistant",
           content:
             result.answer || "I couldn't generate an answer for that question.",
+          sources: sourceLabels.length > 0 ? sourceLabels : undefined,
         },
       ]);
     } catch {
@@ -126,6 +132,18 @@ export function ExpenseChatbot() {
                 <p className="whitespace-pre-wrap text-sm leading-6">
                   {message.content}
                 </p>
+                {message.sources && message.sources.length > 0 && (
+                  <div className="mt-2 border-t border-slate-200 pt-2">
+                    <p className="text-xs font-medium text-slate-500">Matched records</p>
+                    <ul className="mt-1 space-y-1">
+                      {message.sources.map((source, sourceIndex) => (
+                        <li key={sourceIndex} className="text-xs text-slate-600">
+                          {source}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             ))}
 
