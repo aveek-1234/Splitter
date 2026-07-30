@@ -36,15 +36,18 @@ export async function embedText(text: string): Promise<number[]> {
 
   const payload = (await response.json()) as {
     embedding?: number[];
-    embeddings?: number[];
+    embeddings?: number[][];
     error?: string;
   };
 
+  const fromSingle = payload.embedding;
+  const fromBatch = payload.embeddings?.[0];
+
   const embedding =
-    Array.isArray(payload.embedding) && payload.embedding.length > 0
-      ? payload.embedding
-      : Array.isArray(payload.embeddings) && payload.embeddings.length > 0
-        ? payload.embeddings
+    Array.isArray(fromSingle) && fromSingle.length > 0
+      ? fromSingle
+      : Array.isArray(fromBatch) && fromBatch.length > 0
+        ? fromBatch
         : undefined;
 
   if (!embedding || !Array.isArray(embedding)) {
