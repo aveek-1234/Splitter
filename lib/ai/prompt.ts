@@ -43,3 +43,52 @@ ${JSON.stringify(visiblePayload, null, 2)}`;
     `Question:\n${question}`,
   ].join("\n");
 }
+
+export function buildHybridPrompt(
+  question: string,
+  structuredContext: unknown,
+  dateContext: unknown,
+  ragDocuments: RetrievedDocument[] = [],
+): string {
+  if (typeof question !== "string" || question.trim().length === 0) {
+    throw new Error("buildHybridPrompt requires a non-empty question.");
+  }
+
+  const ragSection =
+    ragDocuments.length > 0
+      ? ragDocuments
+          .map((document, index) => {
+            return `Related record ${index + 1}:
+${JSON.stringify(
+  {
+    sourceTable: document.sourceTable,
+    sourceId: document.sourceId,
+    entityType: document.entityType,
+    text: document.text,
+    createdAt: document.createdAt,
+  },
+  null,
+  2,
+)}`;
+          })
+          .join("\n\n")
+      : "No additional vector-search records were retrieved.";
+
+  return [
+    `You are Splitter's expense assistant.`,
+    `Answer using the structured expense context below as your primary source of truth.`,
+    `When the user asks for totals, balances, or what they still need to settle, calculate from expenses, settlements, and balances in the context.`,
+    `Positive netBalance means the counterparty owes the user; negative means the user owes the counterparty.`,
+    `For relative dates (today, this week, this month, last month), use the current date context.`,
+    `You may also use related vector-search records for fuzzy recall across history.`,
+    `If the data does not contain the answer, say so clearly. Never invent transactions.`,
+    "",
+    `Current date context:\n${JSON.stringify(dateContext, null, 2)}`,
+    "",
+    `Structured expense context:\n${JSON.stringify(structuredContext, null, 2)}`,
+    "",
+    `Related vector-search records:\n${ragSection}`,
+    "",
+    `User question:\n${question}`,
+  ].join("\n");
+}

@@ -1,6 +1,9 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { askQuestion } from "@/lib/ai/rag";
+import { api } from "@/convex/_generated/api";
+import { askHybridQuestion } from "@/lib/ai/rag";
+import { createConvexClient } from "@/lib/chatbot/convexClient";
+import { getCurrentDateContext } from "@/lib/chatbot/dateContext";
 
 export async function POST(request: Request) {
   const session = await auth();
@@ -27,7 +30,16 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await askQuestion(question);
+    const convexToken = await session.getToken({ template: "convex" });
+    const convex = createConvexClient(convexToken);
+    const structuredContext = await convex.query(api.chatbot.getExpenseChatContext);
+    const dateContext = getCurrentDateContext();
+
+    const result = await askHybridQuestion(
+      question,
+      structuredContext,
+      dateContext,
+    );
 
     return NextResponse.json({
       answer: result.answer,
@@ -37,7 +49,7 @@ export async function POST(request: Request) {
       })),
     });
   } catch (error) {
-    console.error("Chatbot RAG error", error);
+    console.error("Chatbot hybrid error", error);
 
     return NextResponse.json(
       {

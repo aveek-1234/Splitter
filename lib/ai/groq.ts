@@ -13,7 +13,10 @@ import OpenAI from "openai";
 //   baseURL: GROQ_BASE_URL,
 // });
 
-export async function generateAnswer(prompt: string): Promise<string> {
+export async function generateAnswer(
+  prompt: string,
+  systemMessage = "You are a helpful assistant that answers only from provided context. Do not invent facts.",
+): Promise<string> {
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
   const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
   const GROQ_MODEL = "llama-3.3-70b-versatile";
@@ -31,8 +34,7 @@ export async function generateAnswer(prompt: string): Promise<string> {
     messages: [
       {
         role: "system",
-        content:
-          "You are a helpful assistant that answers only from provided context. Do not invent facts.",
+        content: systemMessage,
       },
       {
         role: "user",
