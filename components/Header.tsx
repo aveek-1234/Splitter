@@ -20,7 +20,7 @@ function Header() {
         <Link href="/" className='flex items-center gap-2'>
             <Image
               src={splitterLogo}
-              alt="Splitter Logo"
+              alt="SplitterHub"
               width={200}
               height={60}
               className='h-11 w-auto object-contain'
@@ -39,6 +39,12 @@ function Header() {
               className='text-sm font-medium hover:to-blue-600 transition'
               >
               How It Works
+            </Link>
+            <Link
+              href="#faq"
+              className='text-sm font-medium hover:to-blue-600 transition'
+            >
+              FAQ
             </Link>
           </div>
         )}

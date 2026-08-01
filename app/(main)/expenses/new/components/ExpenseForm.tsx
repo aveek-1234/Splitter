@@ -18,6 +18,7 @@ import { Controller, useForm } from "react-hook-form"
 import {z} from "zod"
 import { GroupSelector, type GroupWithMembers } from "./GroupSelector"
 import { ParticipantSelector } from "./ParticipantSelector"
+import { queueEmbedding } from "@/lib/embeddings/queueEmbedding"
 
 type ExpenseFormProps = {
   type: "individual" | "group"
@@ -175,6 +176,13 @@ function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
         splits,
         groupId: type === "group" ? data.groupId : null,
       });
+      if (expenseId) {
+        void queueEmbedding({
+          action: "upsert",
+          sourceTable: "expenses",
+          sourceId: expenseId,
+        });
+      }
       onSuccess(type==="individual"? participants?.[1]?._id as string : selectedGroup?.id as string);
       reset();
     } catch (err) {

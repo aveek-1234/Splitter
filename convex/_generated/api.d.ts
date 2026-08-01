@@ -12,6 +12,7 @@ import type * as chatbot from "../chatbot.js";
 import type * as contacts from "../contacts.js";
 import type * as createExpense from "../createExpense.js";
 import type * as dashboard from "../dashboard.js";
+import type * as embeddings from "../embeddings.js";
 import type * as export_ from "../export.js";
 import type * as groupExpenses from "../groupExpenses.js";
 import type * as individualExpenses from "../individualExpenses.js";
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   contacts: typeof contacts;
   createExpense: typeof createExpense;
   dashboard: typeof dashboard;
+  embeddings: typeof embeddings;
   export: typeof export_;
   groupExpenses: typeof groupExpenses;
   individualExpenses: typeof individualExpenses;

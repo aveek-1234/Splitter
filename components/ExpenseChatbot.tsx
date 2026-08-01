@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import { useFetchQuery } from "@/hooks/useFetchQuery";
+import { askChatQuestion } from "@/lib/chatbot/askQuestion";
 import { format } from "date-fns";
 import {
   ArrowDownRight,
   ArrowUpRight,
   Bot,
+  Loader2,
   Send,
   Sparkles,
   Wallet,
@@ -18,6 +20,7 @@ import {
 type Message = {
   role: "user" | "assistant";
   content: string;
+  sources?: string[];
 };
 
 const quickPrompts = [
@@ -27,9 +30,92 @@ const quickPrompts = [
   "Summarize my spending in the last 30 days",
 ];
 
+const thinkingSteps = [
+  "Reading your expense records",
+  "Searching related transactions",
+  "Calculating balances and totals",
+  "Preparing your answer",
+];
+
+function AssistantThinkingBubble() {
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setStepIndex((current) => (current + 1) % thinkingSteps.length);
+    }, 2200);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="max-w-[90%] animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="relative overflow-hidden rounded-2xl border border-blue-100 bg-gradient-to-br from-slate-50 via-white to-blue-50 px-4 py-4 shadow-sm">
+        <div className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full bg-blue-100/60 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-10 -left-6 h-20 w-20 rounded-full bg-indigo-100/50 blur-2xl" />
+
+        <div className="relative flex items-start gap-3">
+          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white shadow-md shadow-blue-200">
+            <Bot className="h-5 w-5" />
+            <span className="absolute inset-0 rounded-full border-2 border-blue-300/70 animate-ping" />
+            <span className="absolute inset-0 rounded-full border border-blue-400/40 animate-pulse" />
+          </div>
+
+          <div className="min-w-0 flex-1 space-y-3">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-slate-800">Expense Assistant</p>
+              <span className="flex gap-1">
+                {[0, 1, 2].map((dot) => (
+                  <span
+                    key={dot}
+                    className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-bounce"
+                    style={{ animationDelay: `${dot * 150}ms` }}
+                  />
+                ))}
+              </span>
+            </div>
+
+            <p className="text-sm text-slate-600 transition-all duration-500">
+              {thinkingSteps[stepIndex]}
+            </p>
+
+            <div className="space-y-2">
+              <div className="flex h-2.5 gap-1">
+                {[0, 1, 2, 3, 4].map((bar) => (
+                  <div
+                    key={bar}
+                    className="h-full flex-1 rounded-full bg-blue-400/35 animate-pulse"
+                    style={{ animationDelay: `${bar * 120}ms` }}
+                  />
+                ))}
+              </div>
+              <div className="grid gap-2">
+                <div className="h-2.5 w-[92%] rounded-full bg-slate-100 animate-pulse" />
+                <div className="h-2.5 w-[76%] rounded-full bg-slate-100 animate-pulse [animation-delay:150ms]" />
+                <div className="h-2.5 w-[64%] rounded-full bg-slate-100 animate-pulse [animation-delay:300ms]" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ContextLoadingBubble() {
+  return (
+    <div className="max-w-[90%] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <div className="flex items-center gap-3">
+        <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+        <p className="text-sm text-slate-600">Loading your expense snapshot...</p>
+      </div>
+    </div>
+  );
+}
+
 export function ExpenseChatbot() {
   const { data: context, loading } = useFetchQuery<any>(api.chatbot.getExpenseChatContext);
-  console.log("ExpenseChatbot context:", context);
+
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -73,24 +159,20 @@ export function ExpenseChatbot() {
     setIsSending(true);
 
     try {
-      const response = await fetch("/api/chatbot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          query: trimmed,
-          context,
-        }),
-      });
+      const result = await askChatQuestion(trimmed);
 
-      const data = (await response.json()) as { answer?: string };
+      const sourceLabels = result.sources
+        .map((source) => source.payload.text)
+        .filter((text): text is string => typeof text === "string" && text.length > 0)
+        .slice(0, 3);
 
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: data.answer || "I couldn't generate an answer for that question.",
+          content:
+            result.answer || "I couldn't generate an answer for that question.",
+          sources: sourceLabels.length > 0 ? sourceLabels : undefined,
         },
       ]);
     } catch {
@@ -134,14 +216,24 @@ export function ExpenseChatbot() {
                 <p className="whitespace-pre-wrap text-sm leading-6">
                   {message.content}
                 </p>
+                {message.sources && message.sources.length > 0 && (
+                  <div className="mt-2 border-t border-slate-200 pt-2">
+                    <p className="text-xs font-medium text-slate-500">Matched records</p>
+                    <ul className="mt-1 space-y-1">
+                      {message.sources.map((source, sourceIndex) => (
+                        <li key={sourceIndex} className="text-xs text-slate-600">
+                          {source}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             ))}
 
-            {loading && (
-              <div className="max-w-[90%] rounded-2xl bg-slate-100 px-4 py-3 text-sm text-slate-600">
-                Loading your expense snapshot...
-              </div>
-            )}
+            {isSending && <AssistantThinkingBubble />}
+
+            {loading && <ContextLoadingBubble />}
           </div>
 
           <form onSubmit={handleSubmit} className="flex gap-3 border-t pt-4">
@@ -153,9 +245,18 @@ export function ExpenseChatbot() {
               className="flex-1 rounded-xl border border-input bg-background px-4 py-3 text-sm outline-none ring-0 transition focus:border-blue-500"
               disabled={isSending}
             />
-            <Button type="submit" disabled={isSending} className="self-end">
-              <Send className="mr-2 h-4 w-4" />
-              Send
+            <Button type="submit" disabled={isSending} className="self-end min-w-[104px]">
+              {isSending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Thinking
+                </>
+              ) : (
+                <>
+                  <Send className="mr-2 h-4 w-4" />
+                  Send
+                </>
+              )}
             </Button>
           </form>
         </CardContent>

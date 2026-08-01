@@ -39,12 +39,11 @@ RUN apt-get update && \
 RUN groupadd -g 1001 nodejs && \
     useradd -r -u 1001 -g nodejs nextjs
 
-# Copy built application from builder
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+# Copy standalone server (traced deps only — no full node_modules)
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+# Standalone output omits static assets and public files
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/convex ./convex
 
 # Switch to non-root user
 USER nextjs
@@ -52,10 +51,12 @@ USER nextjs
 EXPOSE 3000
 
 ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD node -e "const http=require('http'); const req=http.get('http://localhost:3000/api/health', (res)=>{res.resume(); if (res.statusCode===200){ console.log('healthcheck ok'); process.exit(0);} process.exit(1);}); req.on('error', ()=>process.exit(1));"
 
 ENTRYPOINT ["dumb-init", "--"]
 
-CMD ["npm", "start"]
+CMD ["node", "server.js"]
