@@ -7,7 +7,7 @@ export const FEATURES = [
     bg: "bg-blue-100",
     color: "text-blue-600",
     description:
-      "Create groups for roommates, trips, or events to keep expenses organized.",
+      "Create groups for roommates, trips, or events and keep every shared bill organized.",
   },
   {
     title: "Smart Settlements",
@@ -15,7 +15,7 @@ export const FEATURES = [
     bg: "bg-teal-100",
     color: "text-teal-600",
     description:
-      "Our algorithm minimises the number of payments when settling up.",
+      "Minimize the number of payments when you settle up so everyone gets paid back faster.",
   },
   {
     title: "Expense Analytics",
@@ -23,7 +23,7 @@ export const FEATURES = [
     bg: "bg-blue-100",
     color: "text-blue-600",
     description:
-      "Track spending patterns and discover insights about your shared costs.",
+      "Track spending patterns and see insights about your shared costs over time.",
   },
   {
     title: "Payment Reminders",
@@ -31,7 +31,7 @@ export const FEATURES = [
     bg: "bg-amber-100",
     color: "text-amber-600",
     description:
-      "Automated reminders for pending debts and insights on spending patterns.",
+      "Get automated reminders for pending debts so shared balances do not linger.",
   },
   {
     title: "Multiple Split Types",
@@ -39,13 +39,14 @@ export const FEATURES = [
     bg: "bg-blue-100",
     color: "text-blue-600",
     description:
-      "Split equally, by percentage, or by exact amounts to fit any scenario.",
+      "Split equally, by percentage, or by exact amounts to fit rent, trips, and dinners.",
   },
   {
-    title: "Real‑time Updates",
+    title: "Real-time Updates",
     Icon: Clock,
     bg: "bg-blue-100",
     color: "text-blue-600",
-    description:"See new expenses and repayments the moment your friends add them.",
+    description:
+      "See new expenses and repayments the moment your friends add them.",
   },
 ];
