@@ -1,12 +1,19 @@
-import { SignIn } from '@clerk/nextjs';
-import React from 'react'
+import type { Metadata } from "next";
+import { SignIn } from "@clerk/nextjs";
 
-function SignInpage() {
+export const metadata: Metadata = {
+  title: "Sign in",
+  description: "Sign in to SplitterHub to manage shared expenses and settlements.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
+export default function SignInPage() {
   return (
     <div>
       <SignIn />
     </div>
-  )
+  );
 }
-
-export default SignInpage;

@@ -1,13 +1,19 @@
-import { SignUp } from '@clerk/nextjs';
-import { Sign } from 'crypto';
-import React from 'react'
+import type { Metadata } from "next";
+import { SignUp } from "@clerk/nextjs";
 
-function SignUppage() {
+export const metadata: Metadata = {
+  title: "Sign up",
+  description: "Create a SplitterHub account to split bills and settle up with your groups.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
+
+export default function SignUpPage() {
   return (
     <div>
       <SignUp />
     </div>
-  )
+  );
 }
-
-export default SignUppage;
