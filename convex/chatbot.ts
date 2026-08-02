@@ -1,3 +1,4 @@
+import { v } from "convex/values";
 import { api } from "./_generated/api";
 import { query, type QueryCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
@@ -236,33 +237,125 @@ function computeSummary(
   };
 }
 
+type LoadedUserChatData = {
+  currentUser: Doc<"users">;
+  userById: UserMap;
+  groupById: GroupMap;
+  userExpenses: Doc<"expenses">[];
+  userSettlements: Doc<"settlements">[];
+};
+
+async function loadUserChatData(ctx: QueryCtx): Promise<LoadedUserChatData> {
+  const currentUser = await ctx.runQuery(api.users.getCurrentUser);
+
+  const [users, groups, allExpenses, allSettlements] = await Promise.all([
+    ctx.db.query("users").collect(),
+    ctx.db.query("groups").collect(),
+    ctx.db.query("expenses").collect(),
+    ctx.db.query("settlements").collect(),
+  ]);
+
+  const userById: UserMap = new Map(users.map((user) => [user._id, user]));
+  const groupById: GroupMap = new Map(groups.map((group) => [group._id, group]));
+
+  const userExpenses = allExpenses.filter((expense) => {
+    if (expense.paidByUserId === currentUser._id) {
+      return true;
+    }
+
+    return expense.splits.some((split) => split.userId === currentUser._id);
+  });
+
+  const userSettlements = allSettlements.filter(
+    (settlement) =>
+      settlement.paidByUserId === currentUser._id ||
+      settlement.receivedByUserId === currentUser._id,
+  );
+
+  return {
+    currentUser,
+    userById,
+    groupById,
+    userExpenses,
+    userSettlements,
+  };
+}
+
+function monthRangeMs(month: string): { start: number; end: number } | null {
+  const match = /^(\d{4})-(\d{2})$/.exec(month.trim());
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  if (!Number.isFinite(year) || monthIndex < 0 || monthIndex > 11) {
+    return null;
+  }
+
+  const start = Date.UTC(year, monthIndex, 1);
+  const end = Date.UTC(year, monthIndex + 1, 1) - 1;
+  return { start, end };
+}
+
+function filterExpensesByArgs(
+  expenses: Doc<"expenses">[],
+  groupById: GroupMap,
+  args: {
+    category?: string;
+    month?: string;
+    groupName?: string;
+    limit?: number;
+    maxLimit?: number;
+  },
+): Doc<"expenses">[] {
+  let filtered = expenses;
+
+  if (args.category) {
+    const category = args.category.trim().toLowerCase();
+    filtered = filtered.filter(
+      (expense) =>
+        (expense.category ?? "Uncategorized").toLowerCase() === category,
+    );
+  }
+
+  if (args.month) {
+    const range = monthRangeMs(args.month);
+    if (range) {
+      filtered = filtered.filter(
+        (expense) => expense.date >= range.start && expense.date <= range.end,
+      );
+    }
+  }
+
+  if (args.groupName) {
+    const groupName = args.groupName.trim().toLowerCase();
+    filtered = filtered.filter((expense) => {
+      if (!expense.groupId) {
+        return groupName === "private" || groupName === "none";
+      }
+      const group = groupById.get(expense.groupId);
+      return (group?.name ?? "").toLowerCase().includes(groupName);
+    });
+  }
+
+  filtered = [...filtered].sort((a, b) => b.date - a.date);
+
+  const maxLimit = args.maxLimit && args.maxLimit > 0 ? args.maxLimit : 100;
+  const limit =
+    args.limit && args.limit > 0 ? Math.min(args.limit, maxLimit) : 50;
+  return filtered.slice(0, limit);
+}
+
 export const getExpenseChatContext = query({
   handler: async (ctx: QueryCtx): Promise<ChatContext> => {
-    const currentUser = await ctx.runQuery(api.users.getCurrentUser);
-
-    const [users, groups, allExpenses, allSettlements] = await Promise.all([
-      ctx.db.query("users").collect(),
-      ctx.db.query("groups").collect(),
-      ctx.db.query("expenses").collect(),
-      ctx.db.query("settlements").collect(),
-    ]);
-
-    const userById: UserMap = new Map(users.map((user) => [user._id, user]));
-    const groupById: GroupMap = new Map(groups.map((group) => [group._id, group]));
-
-    const userExpenses = allExpenses.filter((expense) => {
-      if (expense.paidByUserId === currentUser._id) {
-        return true;
-      }
-
-      return expense.splits.some((split) => split.userId === currentUser._id);
-    });
-
-    const userSettlements = allSettlements.filter(
-      (settlement) =>
-        settlement.paidByUserId === currentUser._id ||
-        settlement.receivedByUserId === currentUser._id,
-    );
+    const {
+      currentUser,
+      userById,
+      groupById,
+      userExpenses,
+      userSettlements,
+    } = await loadUserChatData(ctx);
 
     const expenses = await buildChatExpenses(
       userExpenses,
@@ -294,6 +387,176 @@ export const getExpenseChatContext = query({
       expenses,
       settlements,
       balances,
+    };
+  },
+});
+
+export const getBalancesForCurrentUser = query({
+  handler: async (ctx: QueryCtx) => {
+    const { currentUser, userById, userExpenses, userSettlements } =
+      await loadUserChatData(ctx);
+
+    const balances = computePrivateBalances(
+      currentUser._id,
+      userExpenses,
+      userSettlements,
+      userById,
+    );
+
+    return {
+      user: {
+        id: currentUser._id,
+        name: currentUser.name,
+      },
+      balances,
+      totalOwedByMe: balances.reduce(
+        (sum, balance) =>
+          balance.netBalance < 0 ? sum + Math.abs(balance.netBalance) : sum,
+        0,
+      ),
+      totalOwedToMe: balances.reduce(
+        (sum, balance) =>
+          balance.netBalance > 0 ? sum + balance.netBalance : sum,
+        0,
+      ),
+    };
+  },
+});
+
+export const getSpendingSummaryForCurrentUser = query({
+  args: {
+    month: v.optional(v.string()),
+    category: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const {
+      currentUser,
+      userById,
+      groupById,
+      userExpenses,
+      userSettlements,
+    } = await loadUserChatData(ctx);
+
+    const filteredExpenses = filterExpensesByArgs(userExpenses, groupById, {
+      month: args.month,
+      category: args.category,
+      limit: userExpenses.length || 1,
+      maxLimit: Math.max(userExpenses.length, 1),
+    });
+
+    const balances = computePrivateBalances(
+      currentUser._id,
+      userExpenses,
+      userSettlements,
+      userById,
+    );
+    const summary = computeSummary(
+      filteredExpenses,
+      balances,
+      currentUser._id,
+    );
+
+    return {
+      user: {
+        id: currentUser._id,
+        name: currentUser.name,
+      },
+      filters: {
+        month: args.month ?? null,
+        category: args.category ?? null,
+      },
+      expenseCount: filteredExpenses.length,
+      summary,
+      balances,
+    };
+  },
+});
+
+export const listExpensesForCurrentUser = query({
+  args: {
+    category: v.optional(v.string()),
+    month: v.optional(v.string()),
+    groupName: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { currentUser, userById, groupById, userExpenses } =
+      await loadUserChatData(ctx);
+
+    const filtered = filterExpensesByArgs(userExpenses, groupById, {
+      category: args.category,
+      month: args.month,
+      groupName: args.groupName,
+      limit: args.limit,
+    });
+
+    const expenses = await buildChatExpenses(
+      filtered,
+      currentUser._id,
+      userById,
+      groupById,
+    );
+
+    return {
+      user: {
+        id: currentUser._id,
+        name: currentUser.name,
+      },
+      filters: {
+        category: args.category ?? null,
+        month: args.month ?? null,
+        groupName: args.groupName ?? null,
+        limit: args.limit ?? 50,
+      },
+      count: expenses.length,
+      expenses,
+    };
+  },
+});
+
+export const listSettlementsForCurrentUser = query({
+  args: {
+    month: v.optional(v.string()),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const { currentUser, userById, groupById, userSettlements } =
+      await loadUserChatData(ctx);
+
+    let filtered = userSettlements;
+
+    if (args.month) {
+      const range = monthRangeMs(args.month);
+      if (range) {
+        filtered = filtered.filter(
+          (settlement) =>
+            settlement.date >= range.start && settlement.date <= range.end,
+        );
+      }
+    }
+
+    filtered = [...filtered].sort((a, b) => b.date - a.date);
+    const limit = args.limit && args.limit > 0 ? Math.min(args.limit, 100) : 50;
+    filtered = filtered.slice(0, limit);
+
+    const settlements = await buildChatSettlements(
+      filtered,
+      currentUser._id,
+      userById,
+      groupById,
+    );
+
+    return {
+      user: {
+        id: currentUser._id,
+        name: currentUser.name,
+      },
+      filters: {
+        month: args.month ?? null,
+        limit,
+      },
+      count: settlements.length,
+      settlements,
     };
   },
 });
