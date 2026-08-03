@@ -21,6 +21,8 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   sources?: string[];
+  toolsUsed?: string[];
+  ragUsed?: boolean;
 };
 
 const quickPrompts = [
@@ -173,6 +175,9 @@ export function ExpenseChatbot() {
           content:
             result.answer || "I couldn't generate an answer for that question.",
           sources: sourceLabels.length > 0 ? sourceLabels : undefined,
+          toolsUsed:
+            result.toolsUsed.length > 0 ? result.toolsUsed : undefined,
+          ragUsed: result.ragUsed,
         },
       ]);
     } catch {
@@ -216,6 +221,16 @@ export function ExpenseChatbot() {
                 <p className="whitespace-pre-wrap text-sm leading-6">
                   {message.content}
                 </p>
+                {message.toolsUsed && message.toolsUsed.length > 0 && (
+                  <div className="mt-2 border-t border-slate-200 pt-2">
+                    <p className="text-xs font-medium text-slate-500">
+                      Tools{message.ragUsed ? " · RAG used" : ""}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {message.toolsUsed.join(" → ")}
+                    </p>
+                  </div>
+                )}
                 {message.sources && message.sources.length > 0 && (
                   <div className="mt-2 border-t border-slate-200 pt-2">
                     <p className="text-xs font-medium text-slate-500">Matched records</p>

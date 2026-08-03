@@ -41,6 +41,8 @@ export async function POST(request: Request) {
         score: source.score,
         payload: source.payload,
       })),
+      toolsUsed: result.toolsUsed,
+      ragUsed: result.ragUsed,
     });
   } catch (error) {
     console.error("Chatbot agent error", error);
@@ -50,6 +52,8 @@ export async function POST(request: Request) {
         answer:
           "I hit a temporary issue while checking your expenses. Please try again in a moment.",
         sources: [],
+        toolsUsed: [],
+        ragUsed: false,
       },
       { status: 500 },
     );

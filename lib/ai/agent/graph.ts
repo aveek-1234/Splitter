@@ -13,6 +13,7 @@ import {
 import { ToolNode, toolsCondition } from "@langchain/langgraph/prebuilt";
 import { ConvexHttpClient } from "convex/browser";
 import type { DateContext } from "@/lib/chatbot/dateContext";
+import { ensureLangSmithForNextRoute } from "./langsmith";
 import { makeChatModel } from "./model";
 import { buildAgentSystemPrompt } from "./prompts";
 import { makeExpenseTools, type AgentSource } from "./tools";
@@ -20,6 +21,8 @@ import { makeExpenseTools, type AgentSource } from "./tools";
 export type ExpenseAgentResult = {
   answer: string;
   sources: AgentSource[];
+  toolsUsed: string[];
+  ragUsed: boolean;
 };
 
 function messageText(message: BaseMessage): string {
@@ -51,6 +54,24 @@ function messageText(message: BaseMessage): string {
   return "";
 }
 
+function collectToolsUsed(messages: BaseMessage[]): string[] {
+  const toolsUsed: string[] = [];
+
+  for (const message of messages) {
+    if (!AIMessage.isInstance(message) || !message.tool_calls?.length) {
+      continue;
+    }
+
+    for (const toolCall of message.tool_calls) {
+      if (toolCall.name) {
+        toolsUsed.push(toolCall.name);
+      }
+    }
+  }
+
+  return toolsUsed;
+}
+
 export function makeExpenseAgent(
   convex: ConvexHttpClient,
   dateContext: DateContext,
@@ -76,14 +97,33 @@ export function makeExpenseAgent(
   async function ask(question: string): Promise<ExpenseAgentResult> {
     sources.length = 0;
 
-    const result = await graph.invoke({
-      messages: [
-        new SystemMessage(buildAgentSystemPrompt(dateContext)),
-        new HumanMessage(question),
-      ],
-    });
+    const { tracingEnabled, project } = ensureLangSmithForNextRoute();
+
+    const result = await graph.invoke(
+      {
+        messages: [
+          new SystemMessage(buildAgentSystemPrompt(dateContext)),
+          new HumanMessage(question),
+        ],
+      },
+      {
+        runName: "expense-chat-agent",
+        tags: ["splitter", "chatbot", "langgraph"],
+        metadata: {
+          feature: "expense-chatbot",
+          langsmithProject: project,
+          langsmithTracing: tracingEnabled,
+          date: dateContext.date,
+          month: dateContext.month,
+        },
+      },
+    );
 
     const messages = result.messages as BaseMessage[];
+    const toolsUsed = collectToolsUsed(messages);
+    const ragUsed =
+      toolsUsed.includes("search_related") || sources.length > 0;
+
     const lastAiMessage = [...messages]
       .reverse()
       .find((message) => AIMessage.isInstance(message));
@@ -92,9 +132,20 @@ export function makeExpenseAgent(
       (lastAiMessage && messageText(lastAiMessage)) ||
       "I couldn't generate an answer right now.";
 
+    if (process.env.NODE_ENV === "development") {
+      console.info("[expense-agent]", {
+        toolsUsed,
+        ragUsed,
+        sourceCount: sources.length,
+        langsmithTracing: tracingEnabled,
+      });
+    }
+
     return {
       answer,
       sources: [...sources],
+      toolsUsed,
+      ragUsed,
     };
   }
 

@@ -8,6 +8,8 @@ export type ChatSource = {
 export type AskQuestionResult = {
   answer: string;
   sources: ChatSource[];
+  toolsUsed: string[];
+  ragUsed: boolean;
 };
 
 export async function askChatQuestion(
@@ -30,5 +32,7 @@ export async function askChatQuestion(
   return {
     answer: data.answer,
     sources: data.sources ?? [],
+    toolsUsed: data.toolsUsed ?? [],
+    ragUsed: Boolean(data.ragUsed),
   };
 }
