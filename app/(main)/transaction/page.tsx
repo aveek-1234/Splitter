@@ -6,12 +6,9 @@ import { ExportDialog } from '@/components/ExportDialog';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { api } from '@/convex/_generated/api';
-import { useFetchQuery } from '@/hooks/useFetchQuery';
+import { useFetchQuery, useMutateQuery } from '@/hooks/useFetchQuery';
 import { BarLoader } from 'react-spinners';
 import { format } from 'date-fns/format';
-import { useMutateQuery } from '@/hooks/useMutateQuery';
-import { useAction } from 'convex/react';
 
 export default function TransactionPage() {
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -38,7 +35,7 @@ export default function TransactionPage() {
       note?: string;
       _id: string;
     }>;
-  }>(api.userTransactions.getUserTransactions);
+  }>( "/api/transactions");
 
   const [dateRange, setDateRange] = useState<{
     from: Date | undefined;
@@ -48,9 +45,7 @@ export default function TransactionPage() {
     to: undefined,
   });
 
-  const triggerExport = useAction(
-  api.export.triggerExport
-);
+  const { mutate: triggerExport } = useMutateQuery();
 
 
 
@@ -140,7 +135,7 @@ const allTransactions = [
             }}
             handleExport={async(from, to) => {
               setDateRange({ from, to });
-              await triggerExport({ transactions: allTransactions });
+              await triggerExport("/api/exports", { body: { transactions: allTransactions } });
             }}
           />
         </CardHeader>

@@ -1,9 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { api } from "@/convex/_generated/api";
-import { useFetchQuery } from "@/hooks/useFetchQuery";
-import { useMutateQuery } from "@/hooks/useMutateQuery";
+import { useFetchQuery, useMutateQuery } from "@/hooks/useFetchQuery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,9 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { BarLoader } from "react-spinners";
-import type { User } from "@/lib/models";
-import { GetSettlementsResult } from "@/convex/settlement";
-import { queueEmbedding } from "@/lib/embeddings/queueEmbedding";
+import type { User, GetSettlementsResult } from "@/lib/models";
 
 
 export default function SettlementPage() {
@@ -22,15 +18,12 @@ export default function SettlementPage() {
   const type = params.type as string;
   const id = params.id as string;
 
-  const { data, loading, error } = useFetchQuery<GetSettlementsResult>(
-    api.settlement.getSettlements,
-    { type, id }
+  const { data, loading, error, refetch } = useFetchQuery<GetSettlementsResult>(
+    type && id ? `/api/settlements?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}` : null
   );
 
-  const { data: currentUser } = useFetchQuery<User>(api.users.getCurrentUser);
-  const { mutate: createSettlement, loading: settling } = useMutateQuery(
-    api.settlement.createSettlement
-  );
+  const { data: currentUser } = useFetchQuery<User>("/api/users/me");
+  const { mutate: createSettlement, loading: settling } = useMutateQuery<string>();
 
   const [userAmount, setUserAmount] = useState("");
   const [groupAmounts, setGroupAmounts] = useState<Record<string, string>>({});
@@ -68,17 +61,15 @@ export default function SettlementPage() {
     }
 
     try {
-      const settlementId = await createSettlement({
-        amount,
-        paidByUserId: currentUser._id,
-        receivedByUserId: data.otheruserDetails._id,
+      const settlementId = await createSettlement("/api/settlements", {
+        body: {
+          amount,
+          paidByUserId: currentUser._id,
+          receivedByUserId: data.otheruserDetails._id,
+        },
       });
       if (settlementId) {
-        void queueEmbedding({
-          action: "upsert",
-          sourceTable: "settlements",
-          sourceId: settlementId,
-        });
+        refetch();
       }
       toast.success("Settlement created successfully");
       setUserAmount("");
@@ -115,22 +106,18 @@ export default function SettlementPage() {
         amount,
         paidByUserId: currentUser._id,
         receivedByUserId: userId as string,
-        groupId: data.group.id,
+        groupId: data.group!.id,
       };
     });
 
     try {
       const results = await Promise.all(
-        settlements.map((settlement) => createSettlement(settlement))
+        settlements.map((settlement) =>
+          createSettlement("/api/settlements", { body: settlement }),
+        ),
       );
-      for (const settlementId of results) {
-        if (settlementId) {
-          void queueEmbedding({
-            action: "upsert",
-            sourceTable: "settlements",
-            sourceId: settlementId,
-          });
-        }
+      if (results.some(Boolean)) {
+        refetch();
       }
       toast.success("Settlements created successfully");
       setGroupAmounts({});

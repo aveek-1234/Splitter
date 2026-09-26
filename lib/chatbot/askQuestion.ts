@@ -12,11 +12,13 @@ export type AskQuestionResult = {
 
 export async function askChatQuestion(
   question: string,
+  token?: string | null,
 ): Promise<AskQuestionResult> {
   const response = await fetch("/api/chatbot/ask", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: JSON.stringify({ question }),
   });

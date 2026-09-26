@@ -1,3 +1,5 @@
+"use client"
+
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { CreateGroupModalProps, User } from '@/lib/models'
 import {useForm} from "react-hook-form";
@@ -7,8 +9,7 @@ import { defaultValues, groupSchema, type GroupFormValues } from '@/form_helpers
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useFetchQuery } from '@/hooks/useFetchQuery';
-import { api } from '@/convex/_generated/api';
+import { useFetchQuery, useMutateQuery } from '@/hooks/useFetchQuery';
 import { Badge, UserPlus } from 'lucide-react';
 import { Avatar } from '@radix-ui/react-avatar';
 import { AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,10 +18,6 @@ import { Button } from '@/components/ui/button';
 import { PopoverContent } from '@radix-ui/react-popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { CommandList } from 'cmdk';
-import { useMutateQuery } from '@/hooks/useMutateQuery';
-import { on } from 'events';
-import { err } from 'inngest/types';
-import { Id } from '@/convex/_generated/dataModel';
 
 
 
@@ -28,13 +25,12 @@ function CreateGroupModal({isOpen,onClose,onSuccess}: CreateGroupModalProps) {
   const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
   const [commandOpen, setCommandOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: currentUser } = useFetchQuery<User>(api.users.getCurrentUser);
+  const { data: currentUser } = useFetchQuery<User>("/api/users/me");
   const { data: searchedUsers, loading: isSearching } = useFetchQuery<User[]>(
-    api.users.searchUsers,
-    { query: searchQuery }
+    searchQuery ? `/api/users/search?q=${encodeURIComponent(searchQuery)}` : null
   );
 
-  const createGroup = useMutateQuery(api.contacts.createGroup);
+  const { mutate: createGroup } = useMutateQuery<string>();
   
   const {
     register,
@@ -57,14 +53,16 @@ function CreateGroupModal({isOpen,onClose,onSuccess}: CreateGroupModalProps) {
 
   const onSubmit = async (data: GroupFormValues) => {
     try {
-      const memberIds= searchedUsers?.map((user) => user._id);
-      const groupId= await createGroup.mutate({
-        name: data.name,
-        description: data.description,
-        members: memberIds as Id<"users">[] 
-      }) as string;
+      const memberIds= selectedMembers.map((user) => user._id);
+      const groupId= await createGroup("/api/groups", {
+        body: {
+          name: data.name,
+          description: data.description,
+          members: memberIds,
+        },
+      });
       handleClose(false);
-      if (onSuccess) {
+      if (groupId) {
         onSuccess(groupId);
       }
     } catch (error) {

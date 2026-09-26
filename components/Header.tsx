@@ -7,7 +7,6 @@ import splitterLogo from '../assets/images/splitter.png';
 import React from 'react'
 import {BarLoader} from "react-spinners"
 import { usePathname } from 'next/navigation';
-import { Authenticated, Unauthenticated } from 'convex/react';
 import { Button } from './ui/button';
 import { LayoutDashboard, Sparkles } from 'lucide-react';
 
@@ -49,7 +48,7 @@ function Header() {
           </div>
         )}
         <div className='flex items-center gap-2'>
-          <Authenticated>
+          <SignedIn>
             <Link href="/dashboard">
               <Button 
                 variant={"outline"}
@@ -95,8 +94,8 @@ function Header() {
               </Button>
             </Link>
             <UserButton />
-          </Authenticated>
-          <Unauthenticated>           
+          </SignedIn>
+          <SignedOut>           
             <SignInButton>
               <Button variant={"ghost"}>Sign In </Button>
             </SignInButton>
@@ -104,7 +103,7 @@ function Header() {
             <SignUpButton>
               <Button className='bg-red-600 hover:bg-red-700 transition border-none' variant={"ghost"}>Sign Up</Button>
             </SignUpButton>
-          </Unauthenticated>
+          </SignedOut>
         </div>
         {isLoading && (
           <div className='absolute inset-x-0 bottom-0'>

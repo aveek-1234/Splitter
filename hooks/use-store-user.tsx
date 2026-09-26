@@ -1,31 +1,45 @@
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-// import { store } from "@/convex/users";
-import { useUser } from "@clerk/nextjs";
-import { useConvexAuth, useMutation } from "convex/react";
+"use client";
+
+import { useAuth, useUser } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 
-export function useStoreUser()
-{
-    const {isLoading,isAuthenticated} = useConvexAuth();
-    const {user}= useUser()
-    const [userId, setUserId]= useState<Id<"users">|null>(null)
-    const storeUser= useMutation(api.users.store)
+export function useStoreUser() {
+  const { isLoaded, isSignedIn, getToken } = useAuth();
+  const { user } = useUser();
+  const [stored, setStored] = useState(false);
 
-    useEffect(()=>{
-        if(!isAuthenticated){
-            return 
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) {
+      setStored(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const token = await getToken({ template: "convex" });
+        const response = await fetch("/api/users/me", {
+          method: "POST",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!cancelled) {
+          setStored(response.ok);
         }
-        async function storeUserInDatabase() {
-            const id = await storeUser();
-            setUserId(id);
+      } catch {
+        if (!cancelled) {
+          setStored(false);
         }
-        storeUserInDatabase();
-        return ()=>setUserId(null);
-    },[isAuthenticated,user?.id])
-    
-    return {
-        isLoading: isLoading || (isAuthenticated && userId === null),
-        isAuthenticated: isAuthenticated && userId !==null
+      }
+    })();
+
+    return () => {
+      cancelled = true;
     };
+  }, [isLoaded, isSignedIn, user?.id, getToken]);
+
+  return {
+    isLoading: !isLoaded || (isSignedIn && !stored),
+    isAuthenticated: Boolean(isSignedIn && stored),
+  };
 }

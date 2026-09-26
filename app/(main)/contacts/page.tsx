@@ -2,34 +2,29 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { api } from '@/convex/_generated/api'
 import { useFetchQuery } from '@/hooks/useFetchQuery';
-import { Group, User } from '@/lib/models';
-import { useQuery } from 'convex/react'
+import { ContactGroup, ContactUser } from '@/lib/models';
 import { Plus, User as UserIcon, Users } from 'lucide-react';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react'
 import { BarLoader } from 'react-spinners';
 import CreateGroupModal from './_components/create-group-modal';
-import router from 'next/dist/shared/lib/router/router';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { contactGroupModel, contactUserModel } from '@/convex/contacts';
 
 function Contactspage() {
-  const { data, loading, error } = useFetchQuery(api.contacts.getAllContacts);
-  // const { users, groups } = (data ?? { users: [], groups: [] }) as { users: contactUserModel[]; groups: contactGroupModel[] };
-  const users: contactUserModel[] = [];
-const groups: contactGroupModel[] = [];
+  const { data, loading, error } = useFetchQuery<(ContactUser | ContactGroup)[]>("/api/contacts");
+  const users: ContactUser[] = [];
+  const groups: ContactGroup[] = [];
 
-if(Array.isArray(data)){
-  (data ?? []).forEach((item: contactUserModel | contactGroupModel) => {
-  if (item.type === "user") {
-    users.push(item as contactUserModel);
-  } else if (item.type === "group") {
-    groups.push(item as contactGroupModel);
+  if (Array.isArray(data)) {
+    (data ?? []).forEach((item) => {
+      if (item.type === "user") {
+        users.push(item as ContactUser);
+      } else if (item.type === "group") {
+        groups.push(item as ContactGroup);
+      }
+    });
   }
-  });
-}
   const [isGroupCreateModalOpen, setIsGroupCreateModalOpen] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
