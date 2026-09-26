@@ -1,7 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { api } from "@/convex/_generated/api";
-import { askHybridQuestion } from "@/lib/ai/rag";
+import { askExpenseAgent } from "@/lib/ai/agent";
 import { createConvexClient } from "@/lib/chatbot/convexClient";
 import { getCurrentDateContext } from "@/lib/chatbot/dateContext";
 
@@ -32,14 +31,9 @@ export async function POST(request: Request) {
   try {
     const convexToken = await session.getToken({ template: "convex" });
     const convex = createConvexClient(convexToken);
-    const structuredContext = await convex.query(api.chatbot.getExpenseChatContext);
     const dateContext = getCurrentDateContext();
 
-    const result = await askHybridQuestion(
-      question,
-      structuredContext,
-      dateContext,
-    );
+    const result = await askExpenseAgent(question, convex, dateContext);
 
     return NextResponse.json({
       answer: result.answer,
@@ -47,15 +41,19 @@ export async function POST(request: Request) {
         score: source.score,
         payload: source.payload,
       })),
+      toolsUsed: result.toolsUsed,
+      ragUsed: result.ragUsed,
     });
   } catch (error) {
-    console.error("Chatbot hybrid error", error);
+    console.error("Chatbot agent error", error);
 
     return NextResponse.json(
       {
         answer:
           "I hit a temporary issue while checking your expenses. Please try again in a moment.",
         sources: [],
+        toolsUsed: [],
+        ragUsed: false,
       },
       { status: 500 },
     );

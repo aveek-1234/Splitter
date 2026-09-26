@@ -19,6 +19,12 @@ services:
       GROQ_API_KEY: ${GROQ_API_KEY}
       INNGEST_EVENT_KEY: ${INNGEST_EVENT_KEY}
       INNGEST_SIGNING_KEY: ${INNGEST_SIGNING_KEY}
+      # LangChain / LangGraph agent + LangSmith tracing
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-splitter-chatbot}
+      LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT:-https://api.smith.langchain.com}
+      LANGCHAIN_CALLBACKS_BACKGROUND: ${LANGCHAIN_CALLBACKS_BACKGROUND:-false}
       # Internal Docker networking
       QDRANT_URL: http://qdrant:6333
       QDRANT_COLLECTION: splitter_embeddings

@@ -125,6 +125,13 @@ jobs:
             export INNGEST_EVENT_KEY="${{ secrets.INNGEST_EVENT_KEY }}"
             export INNGEST_SIGNING_KEY="${{ secrets.INNGEST_SIGNING_KEY }}"
 
+            # LangChain / LangGraph agent + LangSmith tracing
+            export LANGSMITH_TRACING="${{ secrets.LANGSMITH_TRACING }}"
+            export LANGSMITH_API_KEY="${{ secrets.LANGSMITH_API_KEY }}"
+            export LANGSMITH_PROJECT="${{ secrets.LANGSMITH_PROJECT }}"
+            export LANGSMITH_ENDPOINT="${{ secrets.LANGSMITH_ENDPOINT }}"
+            export LANGCHAIN_CALLBACKS_BACKGROUND="${{ secrets.LANGCHAIN_CALLBACKS_BACKGROUND }}"
+
             docker compose pull
 
             docker compose up -d --remove-orphans
