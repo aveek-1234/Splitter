@@ -2,7 +2,6 @@ import React from 'react'
 
 import { Settlement, OtherUserDetails, User, GroupMemberDetail } from '@/lib/models';
 import { useFetchQuery } from '@/hooks/useFetchQuery';
-import { api } from '@/convex/_generated/api';
 import { Card, CardContent } from './ui/card';
 import { ArrowLeftRight } from 'lucide-react';
 import { format } from 'date-fns/format';
@@ -18,7 +17,7 @@ function SettlementsList({
   isGroupSettlement=false,
   userLookupMap
 }: SettlementsListProps) {
-  const {data:currentUser}: { data?: User } = useFetchQuery(api.users.getCurrentUser);
+  const {data:currentUser}: { data?: User } = useFetchQuery("/api/users/me");
   // INSERT_YOUR_CODE
  
 

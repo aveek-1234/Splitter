@@ -1,5 +1,3 @@
-import { Id } from "../../convex/_generated/dataModel";
-
 // User Model
 export interface User {
   _id: string;
@@ -127,7 +125,7 @@ export interface GroupMemberDetail {
 
 /** Group balance entry for a member (who they owe / who owes them) */
 export interface GroupBalanceEntry {
-  id: Id<"users">;
+  id: string;
   name: string;
   email: string;
   imageUrl: string | undefined;
@@ -155,3 +153,56 @@ export interface CreateGroupModalProps {
   onClose: (open: boolean) => void
   onSuccess: (groupId: string) => void
 }
+
+export interface ContactUser {
+  id: string
+  name: string
+  email: string
+  type: "user"
+  image?: string
+}
+
+export interface ContactGroup {
+  id: string
+  name: string
+  description?: string
+  type: "group"
+  memberCount: number
+}
+
+export type GetSettlementsResult =
+  | {
+      type: "user"
+      group: null
+      otheruserDetails: {
+        _id: string
+        name: string
+        email: string
+        imageUrl: string | null
+      }
+      balanceDetails: Array<{
+        userId: string
+        name: string
+        imageUrl: string | null
+        userOwe: number
+        userIsOwed: number
+        netBalance: number
+      }>
+    }
+  | {
+      type: "group"
+      group: {
+        id: string
+        name: string
+        description: string
+      }
+      otheruserDetails: null
+      balanceDetails: Array<{
+        userId: string
+        name: string
+        imageUrl: string | null
+        userOwe: number
+        userIsOwed: number
+        netBalance: number
+      }>
+    }

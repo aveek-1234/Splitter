@@ -1,4 +1,3 @@
-import { api } from '@/convex/_generated/api';
 import { useFetchQuery } from '@/hooks/useFetchQuery';
 import { GroupMemberDetail, User } from '@/lib/models';
 import React from 'react';
@@ -11,7 +10,7 @@ interface GroupMembersProps {
 }
 
 const GroupMembers = ({ members }: GroupMembersProps ) => {
-  const {data:currentUser}:{data?:User}= useFetchQuery(api.users.getCurrentUser);
+  const {data:currentUser}:{data?:User}= useFetchQuery("/api/users/me");
   if (!members || (Array.isArray(members) && members.length === 0)) {
     return (
       <div className="text-gray-500 text-center py-4">

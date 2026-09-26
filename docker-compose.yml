@@ -1,35 +1,44 @@
 version: "3.8"
 
 services:
-  splitter:
-    image: ghcr.io/aveek-1234/splitter:${IMAGE_TAG}
-    container_name: splitter-app
+  splitter-api:
+    image: ghcr.io/aveek-1234/splitter-api:${IMAGE_TAG}
+    container_name: splitter-api
     depends_on:
       - qdrant
       - ollama
     ports:
+      - "5080:5080"
+    environment:
+      ASPNETCORE_URLS: http://+:5080
+      Clerk__Issuer: ${CLERK_JWT_ISSUER_DOMAIN}
+      Convex__Url: ${CONVEX_URL}
+      Convex__AdminToken: ${CONVEX_ADMIN_TOKEN:-}
+      Groq__ApiKey: ${GROQ_API_KEY}
+      Qdrant__Url: http://qdrant:6333
+      Qdrant__Collection: splitter_embeddings
+      Ollama__BaseUrl: http://ollama:11434
+      Ollama__EmbedModel: nomic-embed-text
+      CLERK_JWT_ISSUER_DOMAIN: ${CLERK_JWT_ISSUER_DOMAIN}
+      CONVEX_URL: ${CONVEX_URL}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+    restart: unless-stopped
+    networks:
+      - splitter-network
+
+  splitter:
+    image: ghcr.io/aveek-1234/splitter:${IMAGE_TAG}
+    container_name: splitter-app
+    depends_on:
+      - splitter-api
+    ports:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_CONVEX_URL: ${NEXT_PUBLIC_CONVEX_URL}
+      DOTNET_API_URL: http://splitter-api:5080
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
       CLERK_JWT_ISSUER_DOMAIN: ${CLERK_JWT_ISSUER_DOMAIN}
-      RESEND_API_KEY: ${RESEND_API_KEY}
-      GROQ_API_KEY: ${GROQ_API_KEY}
-      INNGEST_EVENT_KEY: ${INNGEST_EVENT_KEY}
-      INNGEST_SIGNING_KEY: ${INNGEST_SIGNING_KEY}
-      # LangChain / LangGraph agent + LangSmith tracing
-      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-false}
-      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
-      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-splitter-chatbot}
-      LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT:-https://api.smith.langchain.com}
-      LANGCHAIN_CALLBACKS_BACKGROUND: ${LANGCHAIN_CALLBACKS_BACKGROUND:-false}
-      # Internal Docker networking
-      QDRANT_URL: http://qdrant:6333
-      QDRANT_COLLECTION: splitter_embeddings
-      OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_EMBED_MODEL: nomic-embed-text
     restart: unless-stopped
     healthcheck:
       test:
@@ -70,19 +79,6 @@ services:
     restart: unless-stopped
     networks:
       - splitter-network
-
-  # Optional: Uncomment if you need a reverse proxy
-  # nginx:
-  #   image: nginx:alpine
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
-  #   depends_on:
-  #     - splitter
-  #   networks:
-  #     - splitter-network
 
 volumes:
   qdrant_data:

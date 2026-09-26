@@ -6,7 +6,6 @@ import SettlementsList from '@/components/SettlementsList';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { api } from '@/convex/_generated/api';
 import { useFetchQuery } from '@/hooks/useFetchQuery';
 import { toggleViewOptions } from '@/lib/constants/toggleOptions';
 import { GroupExpensesData, QueryData } from '@/lib/models';
@@ -19,8 +18,7 @@ function page() {
   const params = useParams();
   const router= useRouter()
   const { data, loading, error } = useFetchQuery(
-    api.groupExpenses.getGroupExpenses,
-    {groupId:params.id}
+    params.id ? `/api/groups/${params.id}` : null
   );
 
   const typedData = data as GroupExpensesData;

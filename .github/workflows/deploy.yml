@@ -54,11 +54,20 @@ jobs:
           context: .
           push: true
           build-args: |
-            NEXT_PUBLIC_CONVEX_URL=${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/splitter:latest
             ghcr.io/${{ github.repository_owner }}/splitter:${{ github.sha }}
+
+      - name: Build and Push API Docker Image
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/splitter-api:latest
+            ghcr.io/${{ github.repository_owner }}/splitter-api:${{ github.sha }}
 
       - name: Build Docker Image Only
         if: github.event_name == 'pull_request'
@@ -67,8 +76,14 @@ jobs:
           context: .
           push: false
           build-args: |
-            NEXT_PUBLIC_CONVEX_URL=${{ secrets.NEXT_PUBLIC_CONVEX_URL }}
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+
+      - name: Build API Docker Image Only
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api
+          push: false
 
   # -----------------------
   # 🚀 VPS DEPLOY
@@ -113,24 +128,14 @@ jobs:
 
             export IMAGE_TAG=${{ github.sha }}
 
-            export NEXT_PUBLIC_CONVEX_URL="${{ secrets.NEXT_PUBLIC_CONVEX_URL }}"
+            export DOTNET_API_URL="http://splitter-api:5080"
             export NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}"
 
             export CLERK_SECRET_KEY="${{ secrets.CLERK_SECRET_KEY }}"
             export CLERK_JWT_ISSUER_DOMAIN="${{ secrets.CLERK_JWT_ISSUER_DOMAIN }}"
 
-            export RESEND_API_KEY="${{ secrets.RESEND_API_KEY }}"
+            export CONVEX_URL="${{ secrets.NEXT_PUBLIC_CONVEX_URL }}"
             export GROQ_API_KEY="${{ secrets.GROQ_API_KEY }}"
-
-            export INNGEST_EVENT_KEY="${{ secrets.INNGEST_EVENT_KEY }}"
-            export INNGEST_SIGNING_KEY="${{ secrets.INNGEST_SIGNING_KEY }}"
-
-            # LangChain / LangGraph agent + LangSmith tracing
-            export LANGSMITH_TRACING="${{ secrets.LANGSMITH_TRACING }}"
-            export LANGSMITH_API_KEY="${{ secrets.LANGSMITH_API_KEY }}"
-            export LANGSMITH_PROJECT="${{ secrets.LANGSMITH_PROJECT }}"
-            export LANGSMITH_ENDPOINT="${{ secrets.LANGSMITH_ENDPOINT }}"
-            export LANGCHAIN_CALLBACKS_BACKGROUND="${{ secrets.LANGCHAIN_CALLBACKS_BACKGROUND }}"
 
             docker compose pull
 

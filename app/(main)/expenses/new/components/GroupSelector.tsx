@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { api } from "@/convex/_generated/api"
 import { useFetchQuery } from "@/hooks/useFetchQuery"
 import { cn } from "@/lib/utils"
 import { Loader2, Users } from "lucide-react"
@@ -37,7 +36,7 @@ export function GroupSelector({
 }: GroupSelectorProps) {
   
   const { data: groups = [], loading } = useFetchQuery<GroupWithMembers[]>(
-    api.groupExpenses.getUserGroupsWithMembers
+    "/api/groups/mine"
   )
 
   const selected = groups.find((g) => g.id === value)

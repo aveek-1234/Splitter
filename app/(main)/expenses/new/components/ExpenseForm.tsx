@@ -6,9 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { api } from "@/convex/_generated/api"
-import { useFetchQuery } from "@/hooks/useFetchQuery"
-import { useMutateQuery } from "@/hooks/useMutateQuery"
+import { useFetchQuery, useMutateQuery } from "@/hooks/useFetchQuery"
 import { expenseCategories } from "@/lib/expenseCategory"
 import { Group, Split, User } from "@/lib/models"
 import { SplitSelector, SplitType } from "./SplitSelector"
@@ -18,7 +16,6 @@ import { Controller, useForm } from "react-hook-form"
 import {z} from "zod"
 import { GroupSelector, type GroupWithMembers } from "./GroupSelector"
 import { ParticipantSelector } from "./ParticipantSelector"
-import { queueEmbedding } from "@/lib/embeddings/queueEmbedding"
 
 type ExpenseFormProps = {
   type: "individual" | "group"
@@ -49,12 +46,12 @@ function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
   // "GroupWithMembers" objects (see GroupSelector) so we can read each
   // member's name/email/imageUrl directly.
   const { data: userGroups = [] } = useFetchQuery<GroupWithMembers[]>(
-    api.groupExpenses.getUserGroupsWithMembers
+    "/api/groups/mine"
   );
 
-  const {data: currentUser}= useFetchQuery<User>(api.users.getCurrentUser);
+  const {data: currentUser}= useFetchQuery<User>("/api/users/me");
 
-  const createExpense= useMutateQuery(api.createExpense.createExpense);
+  const { mutate: createExpense } = useMutateQuery<string>();
 
   const categories = expenseCategories;
   
@@ -166,25 +163,22 @@ function ExpenseForm({ type, onSuccess, id }: ExpenseFormProps) {
     setShowParticipantError(false);
 
     try {
-      const expenseId = await createExpense.mutate({
-        description: data.description,
-        amount: total,
-        category: data.category || undefined,
-        date: data.date.getTime(),
-        paidByUserId: data.paidByUserId,
-        splitType: data.splitType,
-        splits,
-        groupId: type === "group" ? data.groupId : null,
+      const expenseId = await createExpense("/api/expenses", {
+        body: {
+          description: data.description,
+          amount: total,
+          category: data.category || undefined,
+          date: data.date.getTime(),
+          paidByUserId: data.paidByUserId,
+          splitType: data.splitType,
+          splits,
+          groupId: type === "group" ? data.groupId : null,
+        },
       });
       if (expenseId) {
-        void queueEmbedding({
-          action: "upsert",
-          sourceTable: "expenses",
-          sourceId: expenseId,
-        });
+        onSuccess(type==="individual"? participants?.[1]?._id as string : selectedGroup?.id as string);
+        reset();
       }
-      onSuccess(type==="individual"? participants?.[1]?._id as string : selectedGroup?.id as string);
-      reset();
     } catch (err) {
       console.error("failed to create expense", err);
       // TODO: show user-facing error (toast/snackbar) if desired

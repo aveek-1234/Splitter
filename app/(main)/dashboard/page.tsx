@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { api } from "@/convex/_generated/api";
 import { useFetchQuery } from "@/hooks/useFetchQuery";
 import type {
   GetUserBalancesResult,
@@ -20,11 +19,11 @@ import GroupList from "./Components/group-list";
 function Dashboard() {
   let netGroupBalance = 0;
   const { data: userBalances, loading: userBalancesLoading } =
-    useFetchQuery<GetUserBalancesResult>(api.dashboard.getUserBalances);
+    useFetchQuery<GetUserBalancesResult>("/api/dashboard/balances");
   const { data: totalSpent, loading: totalSpentLoading } =
-    useFetchQuery<GetTotalSpentResult>(api.dashboard.getTotalSpent);
+    useFetchQuery<GetTotalSpentResult>("/api/dashboard/spent");
   const { data: groupExpenses, loading: groupExpensesLoading } =
-    useFetchQuery<GroupWithBalance[]>(api.dashboard.getGroupExpenses);
+    useFetchQuery<GroupWithBalance[]>("/api/dashboard/groups");
 
   const isLoading= userBalancesLoading || totalSpentLoading || groupExpensesLoading;
 

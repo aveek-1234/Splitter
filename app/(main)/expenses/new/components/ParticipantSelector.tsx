@@ -7,7 +7,6 @@ import { User } from "@/lib/models"
 import { Badge } from "@/components/ui/badge"
 import { X, Users, Search, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { api } from "@/convex/_generated/api"
 import { useFetchQuery } from "@/hooks/useFetchQuery"
 
 type ParticipantSelectorProps = {
@@ -36,13 +35,11 @@ export function ParticipantSelector({
   const shouldSearch = searchQuery.trim().length > 0
 
   const { data: searchedUser, loading: isLoadingUser } = useFetchQuery<User>(
-    api.users.getUserById,
-    id ? { id } : "skip"
+    id ? `/api/users/${id}` : null
   )
 
   const { data: searchResults = [], loading: isSearching } = useFetchQuery<User[]>(
-    api.users.searchUsers,
-    !id && shouldSearch ? { query: searchQuery.trim() } : "skip"
+    !id && shouldSearch ? `/api/users/search?q=${encodeURIComponent(searchQuery.trim())}` : null
   )
 
   const isSearchingResults = id ? isLoadingUser : isSearching

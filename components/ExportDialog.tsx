@@ -3,8 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Download } from 'lucide-react';
-import { api } from '@/convex/_generated/api';
-import { useMutateQuery } from '@/hooks/useMutateQuery';
 
 interface ExportDialogProps {
   isOpen: boolean;

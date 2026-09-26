@@ -5,7 +5,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { api } from '@/convex/_generated/api';
 import { useFetchQuery } from '@/hooks/useFetchQuery';
 import { toggleViewOptions } from '@/lib/constants/toggleOptions'
 import { QueryData } from '@/lib/models';
@@ -18,8 +17,7 @@ const Userpage = () => {
   const params = useParams();
   const router= useRouter();
   const { data, loading, error } = useFetchQuery(
-    api.individualExpenses.getIndividualExpenses,
-    {userId:params.id}
+    params.id ? `/api/users/${params.id}/expenses` : null
   );
 
   const typedData = data as QueryData | undefined;

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { api } from "@/convex/_generated/api";
+import { useAuth } from "@clerk/nextjs";
 import { useFetchQuery } from "@/hooks/useFetchQuery";
 import { askChatQuestion } from "@/lib/chatbot/askQuestion";
 import { format } from "date-fns";
@@ -116,7 +116,8 @@ function ContextLoadingBubble() {
 }
 
 export function ExpenseChatbot() {
-  const { data: context, loading } = useFetchQuery<any>(api.chatbot.getExpenseChatContext);
+  const { getToken } = useAuth();
+  const { data: context, loading } = useFetchQuery<any>("/api/chatbot/context");
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -161,7 +162,8 @@ export function ExpenseChatbot() {
     setIsSending(true);
 
     try {
-      const result = await askChatQuestion(trimmed);
+      const token = await getToken({ template: "convex" });
+      const result = await askChatQuestion(trimmed, token);
 
       const sourceLabels = result.sources
         .map((source) => source.payload.text)

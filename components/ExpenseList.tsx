@@ -1,6 +1,5 @@
-import { api } from '@/convex/_generated/api';
-import { useFetchQuery } from '@/hooks/useFetchQuery';
-import { useMutateQuery } from '@/hooks/useMutateQuery';
+"use client";
+import { useFetchQuery, useMutateQuery } from '@/hooks/useFetchQuery';
 import { Expense, GroupMemberDetail, OtherUserDetails, User } from '@/lib/models';
 import React from 'react'
 import { Card, CardContent } from './ui/card';
@@ -8,8 +7,6 @@ import { getCategoryById, getCategoryIconById } from '@/lib/expenseCategory';
 import { format } from 'date-fns/format';
 import { Badge, Trash } from 'lucide-react';
 import { toast } from 'sonner';
-import { Id } from '@/convex/_generated/dataModel';
-import { queueEmbedding } from '@/lib/embeddings/queueEmbedding';
 
 type ExpenseDetailsProps = {
   expenses: Expense[];
@@ -29,8 +26,8 @@ function ExpenseList(
   }: ExpenseDetailsProps
 ) {
    
-   const { data: currentUser }: { data?: User } = useFetchQuery(api.users.getCurrentUser);
-   const deleteExpense = useMutateQuery(api.individualExpenses.deleteExpense);
+   const { data: currentUser }: { data?: User } = useFetchQuery("/api/users/me");
+   const { mutate: deleteExpense } = useMutateQuery();
 
    console.log(expenses);
    
@@ -65,13 +62,7 @@ function ExpenseList(
       return;
     }
     try {
-      const expenseId = expense._id as Id<"expenses">;
-      await deleteExpense.mutate({ expenseId });
-      void queueEmbedding({
-        action: "delete",
-        sourceTable: "expenses",
-        sourceId: expenseId,
-      });
+      await deleteExpense(`/api/expenses/${expense._id}`, { method: "DELETE" });
     } catch (error) {
       toast.error("Failed to delete expense")
     }

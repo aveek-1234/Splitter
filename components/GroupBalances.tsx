@@ -1,8 +1,6 @@
 "use client"
-import { api } from '@/convex/_generated/api'
 import { useFetchQuery } from '@/hooks/useFetchQuery'
 import { GroupBalanceEntry, User } from '@/lib/models';
-import {  currentUser } from '@clerk/nextjs/server';
 import React from 'react'
 
 interface GroupBalancesProps {
@@ -10,7 +8,7 @@ interface GroupBalancesProps {
 }
 
 function GroupBalances({ balances }: GroupBalancesProps) {
-  const { data: currentUser }:{data?:User} = useFetchQuery(api.users.getCurrentUser);
+  const { data: currentUser }:{data?:User} = useFetchQuery("/api/users/me");
 
   if (!balances) {
     return (

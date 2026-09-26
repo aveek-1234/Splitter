@@ -58,15 +58,6 @@ export default {
 			return newResponse;
 		}
 
-		const isInngestRequest = request.headers.get('x-inngest-signature') || request.headers.get('x-inngest-sdk');
-
-		if (isInngestRequest) {
-			return fetch(request);
-		}
-
-		// -------------------------
-		// 🚨 Bot / attack detection
-		// -------------------------
 		const suspiciousPatterns = ['/wp-admin', '/wp-login', '/xmlrpc.php', '.env', '.git', 'setup-config.php'];
 
 		if (suspiciousPatterns.some((p) => path.includes(p))) {
@@ -88,7 +79,7 @@ export default {
 		// -------------------------
 		// 🌍 Public routes
 		// -------------------------
-		const publicRoutes = ['/', '/sign-in', '/sign-up', '/api/inngest'];
+		const publicRoutes = ['/', '/sign-in', '/sign-up', '/api/health'];
 
 		const isPublic = publicRoutes.some((route) => path === route || path.startsWith(route + '/'));
 
