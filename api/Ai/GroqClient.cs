@@ -32,7 +32,7 @@ public sealed class GroqClient
             _http.DefaultRequestHeaders.Authorization =
                 new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
         }
-        _model = configuration["Groq:Model"] ?? "llama-3.3-70b-versatile";
+        _model = configuration["Groq:Model"] ?? "openai/gpt-oss-120b";
         _apiKey = apiKey;
     }
 
